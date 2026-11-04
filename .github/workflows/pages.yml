@@ -1,0 +1,41 @@
+name: Pages
+
+# Publishes the overview page to https://n42net.github.io/. data.js is rebuilt
+# from public GitHub data on every run, so the numbers stay current without a
+# commit: daily, on every push to main and by hand after a release.
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Daten holen
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 tools/build_data.py
+      - name: Seite zusammenstellen
+        run: |
+          mkdir -p _site
+          cp -r index.html en.js data.js favicon.svg icons fonts _site/
+      - uses: actions/upload-pages-artifact@v5
+      - id: deployment
+        uses: actions/deploy-pages@v5

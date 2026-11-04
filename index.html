@@ -1,0 +1,1400 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Die Wacht-Familie</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Sechs Home-Assistant-Integrationen: was sie tun, wie sie gebaut sind und was sie gemeinsam haben.">
+<meta property="og:title" content="Die Wacht-Familie">
+<meta property="og:description" content="Sechs Home-Assistant-Integrationen: was sie tun, wie sie gebaut sind und was sie gemeinsam haben.">
+<link rel="alternate" hreflang="de" href="https://n42net.github.io/?lang=de">
+<link rel="alternate" hreflang="en" href="https://n42net.github.io/?lang=en">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+/* Layout: Leitstand. Oben Statusleiste und Kanal-Monitor, darunter Gleisplan mit laufenden Datenpaketen, Steckbrief mit manifest-Ansicht, Bauplan, Werkstatt (Mensch + Agent), Lebensweg als Terminal, Zahlen. Dunkel zuerst, hell als Gegenstück. */
+:root {
+  --bg: #0B0F14;
+  --bg-2: #0F141B;
+  --surface: #131922;
+  --raised: #19202A;
+  --line: #222B37;
+  --line-2: #2E3946;
+  --fg: #E6E9ED;
+  --muted: #8C96A4;
+  --dim: #5D6775;
+  --amber: #F5A623;
+  --amber-ink: #F5B94A;
+  --ok: #4CC38A;
+  --warn: #F0B24A;
+  --grid: rgba(255, 255, 255, 0.035);
+  --glass: rgba(11, 15, 20, 0.72);
+  --shadow: 0 1px 0 rgba(255,255,255,.03) inset, 0 20px 40px -24px rgba(0,0,0,.7);
+  --code-key: #8CC2F0; --code-str: #E8C07D; --code-kw: #D19FE0; --code-num: #7FD6B4; --code-dim: #6B7584;
+  /* Kachelfarben wie in den Marken, fest */
+  --tile-sw: #005B8C; --tile-ew: #9B2423; --tile-esw: #008351; --tile-tw: #96497D; --tile-ww: #DE5E32; --tile-spw: #007D7F;
+  /* Linien und Schrift je Wacht */
+  --sw: #5AAEDC; --ew: #EF7A75; --esw: #45C08D; --tw: #D08BBB; --ww: #F2905F; --spw: #4FC3C4;
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #F4F5F7; --bg-2: #ECEEF2; --surface: #FFFFFF; --raised: #F7F8FA; --line: #DEE2E8; --line-2: #C9D0D9;
+    --fg: #0F151C; --muted: #566171; --dim: #8691A0; --amber-ink: #8F5800; --ok: #1F7A4A; --warn: #9C5C05;
+    --grid: rgba(15, 21, 28, 0.05); --glass: rgba(244, 245, 247, 0.78);
+    --shadow: 0 1px 2px rgba(15,21,28,.04), 0 18px 36px -26px rgba(15,21,28,.28);
+    --code-key: #1F5F99; --code-str: #8A5A00; --code-kw: #8A3F9E; --code-num: #18794E; --code-dim: #8691A0;
+    --sw: #005B8C; --ew: #A3302E; --esw: #00754A; --tw: #8A3F72; --ww: #B9471F; --spw: #00696B;
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #F4F5F7; --bg-2: #ECEEF2; --surface: #FFFFFF; --raised: #F7F8FA; --line: #DEE2E8; --line-2: #C9D0D9;
+  --fg: #0F151C; --muted: #566171; --dim: #8691A0; --amber-ink: #8F5800; --ok: #1F7A4A; --warn: #9C5C05;
+  --grid: rgba(15, 21, 28, 0.05); --glass: rgba(244, 245, 247, 0.78);
+  --shadow: 0 1px 2px rgba(15,21,28,.04), 0 18px 36px -26px rgba(15,21,28,.28);
+  --code-key: #1F5F99; --code-str: #8A5A00; --code-kw: #8A3F9E; --code-num: #18794E; --code-dim: #8691A0;
+  --sw: #005B8C; --ew: #A3302E; --esw: #00754A; --tw: #8A3F72; --ww: #B9471F; --spw: #00696B;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 72px); }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--bg); }
+a { color: inherit; text-decoration: none; }
+a:focus-visible, button:focus-visible, [tabindex]:focus-visible, input:focus-visible { outline: 2px solid var(--amber); outline-offset: 3px; border-radius: 6px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.1; font-weight: 600; letter-spacing: -0.02em; }
+h2 { font-size: clamp(1.7rem, 3.4vw, 2.5rem); }
+h3 { font-size: 1.12rem; letter-spacing: -0.01em; }
+p { margin: 0; }
+code, .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+code { font-size: 0.84em; padding: 1px 6px; border-radius: 5px; background: var(--raised); border: 1px solid var(--line); overflow-wrap: anywhere; }
+.muted { color: var(--muted); }
+.gutter { padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 1180px; margin: 0 auto; }
+.label { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.beacon { width: 8px; height: 8px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 0 3px color-mix(in srgb, var(--amber) 25%, transparent), 0 0 14px color-mix(in srgb, var(--amber) 70%, transparent); flex: none; display: inline-block; }
+.beacon.pulse { animation: pulse 2.4s ease-in-out infinite; }
+@keyframes pulse { 50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--amber) 0%, transparent), 0 0 18px color-mix(in srgb, var(--amber) 90%, transparent); } }
+
+/* ---------- Statusleiste ---------- */
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--glass); backdrop-filter: saturate(1.4) blur(14px); -webkit-backdrop-filter: saturate(1.4) blur(14px); border-bottom: 1px solid var(--line); }
+.bar .wrap { display: flex; align-items: center; gap: 20px; height: 58px; }
+.brand { display: flex; align-items: center; gap: 12px; font-family: var(--font-display); font-weight: 600; letter-spacing: -0.01em; white-space: nowrap; }
+.mark { display: grid; grid-template-columns: repeat(3, 7px); gap: 2px; }
+.mark i { width: 7px; height: 7px; border-radius: 2px; display: block; }
+.brand small { font-family: var(--font-mono); font-weight: 400; color: var(--dim); font-size: 0.78rem; }
+.nav { display: flex; gap: 2px; margin-left: 8px; }
+.nav a { font-size: 0.88rem; color: var(--muted); padding: 6px 10px; border-radius: 8px; transition: color .15s, background .15s; }
+.nav a:hover { color: var(--fg); background: var(--raised); }
+.bar-tools { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.kbtn { display: inline-flex; align-items: center; gap: 10px; height: 34px; padding: 0 8px 0 12px; border-radius: 9px; border: 1px solid var(--line-2); background: var(--surface); color: var(--muted); font: inherit; font-size: 0.86rem; cursor: pointer; transition: border-color .15s, color .15s; }
+.kbtn:hover { color: var(--fg); border-color: var(--dim); }
+kbd { font-family: var(--font-mono); font-size: 0.7rem; padding: 2px 6px; border-radius: 5px; border: 1px solid var(--line-2); background: var(--raised); color: var(--muted); }
+.ibtn { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 9px; border: 1px solid var(--line-2); background: var(--surface); color: var(--muted); cursor: pointer; }
+.ibtn:hover { color: var(--fg); }
+.ibtn svg { width: 16px; height: 16px; }
+.ibtn.lang { width: auto; padding: 0 9px; font-family: var(--font-mono); font-size: 0.74rem; letter-spacing: .06em; text-decoration: none; }
+
+/* ---------- Bühne ---------- */
+.hero { position: relative; overflow: hidden; border-bottom: 1px solid var(--line); }
+.hero::before { content: ""; position: absolute; inset: 0; background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 44px 44px; mask-image: radial-gradient(ellipse 80% 70% at 30% 30%, #000 30%, transparent 75%); -webkit-mask-image: radial-gradient(ellipse 80% 70% at 30% 30%, #000 30%, transparent 75%); pointer-events: none; }
+.hero::after { content: ""; position: absolute; width: 640px; height: 640px; left: -160px; top: -300px; background: radial-gradient(circle, color-mix(in srgb, var(--amber) 13%, transparent), transparent 62%); pointer-events: none; }
+.hero .wrap { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 56px; align-items: center; padding-block: 72px 76px; }
+.status { display: inline-flex; align-items: center; gap: 10px; font-family: var(--font-mono); font-size: 0.76rem; color: var(--muted); border: 1px solid var(--line-2); background: color-mix(in srgb, var(--surface) 70%, transparent); padding: 6px 12px 6px 10px; border-radius: 999px; }
+.hero-copy { container-type: inline-size; min-width: 0; }
+.hero h1 { font-size: clamp(2.2rem, 10.4cqi, 4.6rem); line-height: 1.05; letter-spacing: -0.035em; margin-top: 22px; font-weight: 700; white-space: nowrap; min-height: 1.05em; }
+.tw-text { --c: var(--fg); background: linear-gradient(92deg, var(--c) 0%, var(--c) 55%, color-mix(in srgb, var(--c) 45%, var(--amber)) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.tw-text.fam { background: linear-gradient(92deg, var(--fg) 0%, var(--fg) 45%, var(--amber) 100%); -webkit-background-clip: text; background-clip: text; }
+.caret { display: inline-block; width: 0.07em; height: 0.82em; margin-left: 0.06em; vertical-align: -0.04em; background: var(--amber); border-radius: 2px; box-shadow: 0 0 14px color-mix(in srgb, var(--amber) 70%, transparent); animation: blink 1.05s steps(1) infinite; }
+.caret.busy { animation: none; }
+.tw-sub { display: flex; align-items: center; gap: 10px; min-height: 28px; margin-top: 14px; font-family: var(--font-mono); font-size: 0.9rem; color: var(--c, var(--muted)); transition: opacity .25s ease, transform .25s ease; }
+.tw-sub.out { opacity: 0; transform: translateY(4px); }
+.tw-sub img { width: 22px; height: 22px; border-radius: 6px; }
+.tw-sub .mark { grid-template-columns: repeat(3, 6px); }
+.tw-sub .mark i { width: 6px; height: 6px; }
+.hero .lede { font-size: 1.14rem; color: var(--muted); max-width: 54ch; margin-top: 22px; }
+.hero .lede b { color: var(--fg); font-weight: 500; }
+.cta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
+.btn { display: inline-flex; align-items: center; gap: 8px; height: 42px; padding: 0 18px; border-radius: 10px; font-weight: 500; font-size: 0.95rem; border: 1px solid var(--line-2); background: var(--surface); transition: transform .15s, border-color .15s, background .15s; }
+.btn:hover { transform: translateY(-1px); border-color: var(--dim); }
+.btn.primary { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.btn svg { width: 16px; height: 16px; }
+
+/* Kanal-Monitor */
+.monitor { background: color-mix(in srgb, var(--surface) 88%, transparent); border: 1px solid var(--line-2); border-radius: 16px; box-shadow: var(--shadow); overflow: hidden; backdrop-filter: blur(6px); }
+.mon-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+.mon-head .label { display: flex; align-items: center; gap: 8px; }
+.dots { display: flex; gap: 6px; }
+.dots i { width: 9px; height: 9px; border-radius: 50%; background: var(--line-2); display: block; }
+.mon-row { display: grid; grid-template-columns: 22px 116px minmax(0, 1fr) 96px; align-items: center; gap: 12px; padding: 9px 16px; border-bottom: 1px solid var(--line); }
+.mon-row:last-of-type { border-bottom: 0; }
+.mon-row img { width: 22px; height: 22px; display: block; }
+.mon-row .nm { font-family: var(--font-display); font-weight: 600; font-size: 0.9rem; }
+.mon-row .sig { font-size: 0.72rem; color: var(--dim); font-family: var(--font-mono); display: block; line-height: 1.3; }
+.mon-row canvas { width: 100%; height: 34px; display: block; }
+.mon-row .read { font-family: var(--font-mono); font-size: 0.8rem; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.mon-foot { padding: 10px 16px; font-size: 0.76rem; color: var(--dim); border-top: 1px solid var(--line); font-family: var(--font-mono); display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+
+/* KPI-Leiste */
+.kpis { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border-bottom: 1px solid var(--line); background: var(--bg-2); }
+.kpi { padding: 22px 20px; border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.kpi:last-child { border-right: 0; }
+.kpi b { font-family: var(--font-display); font-weight: 600; font-size: 1.75rem; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.kpi span { font-size: 0.78rem; color: var(--muted); }
+
+/* ---------- Abschnitte ---------- */
+main section { padding-block: 96px 0; display: flex; flex-direction: column; gap: 32px; }
+.sec-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px 48px; align-items: end; }
+.sec-head .label { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; }
+.sec-head .label::after { content: ""; height: 1px; flex: 1; background: linear-gradient(90deg, var(--line-2), transparent); }
+.sec-head p { color: var(--muted); max-width: 60ch; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 22px; display: flex; flex-direction: column; gap: 10px; min-width: 0; box-shadow: var(--shadow); }
+.panel p { font-size: 0.94rem; color: var(--muted); }
+.panel h3 { margin-top: 2px; }
+
+/* Die sechs */
+.six { display: flex; flex-direction: column; gap: 40px; }
+.grp { display: flex; flex-direction: column; gap: 16px; }
+.grp-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; }
+.grp-head h3 { font-size: 1.3rem; }
+.grp-head .pill { font-family: var(--font-mono); font-size: 0.72rem; }
+.grp-head p { flex-basis: 100%; color: var(--muted); font-size: 0.94rem; }
+.grp-cards { display: grid; gap: 14px; }
+.g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.seg-div { width: 1px; align-self: stretch; background: var(--line-2); margin: 4px 6px; }
+tr.grp-row td { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); background: var(--bg-2); padding: 8px 16px; }
+tr.grp-row:hover { background: none; }
+.w { --mx: 50%; --my: 0%; position: relative; border-radius: 14px; padding: 22px; display: flex; flex-direction: column; gap: 14px; min-width: 0; border: 1px solid var(--line); box-shadow: var(--shadow);
+  background: radial-gradient(420px circle at var(--mx) var(--my), color-mix(in srgb, var(--c) 13%, transparent), transparent 45%), var(--surface); transition: border-color .2s, transform .2s; }
+.w:hover { border-color: color-mix(in srgb, var(--c) 55%, var(--line)); }
+.w-top { display: flex; gap: 14px; align-items: center; }
+.w-top img { width: 44px; height: 44px; flex: none; border-radius: 10px; }
+.w-top .tag { font-size: 0.82rem; color: var(--c); font-family: var(--font-display); font-weight: 500; }
+.w-top h3 { font-size: 1.25rem; }
+.w .q { font-size: 0.95rem; color: var(--muted); flex: 1; }
+.w-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-family: var(--font-mono); font-size: 0.74rem; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line-2); color: var(--muted); white-space: nowrap; }
+.pill.in { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 40%, transparent); }
+.pill.wait { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 40%, transparent); }
+.pill.in::before, .pill.wait::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.w-links { display: flex; gap: 6px; flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: 14px; }
+.w-links a, .w-links span { font-size: 0.85rem; padding: 5px 10px; border-radius: 8px; border: 1px solid var(--line); transition: border-color .15s, background .15s; }
+.w-links a:hover { border-color: var(--line-2); background: var(--raised); }
+.w-links .demo { color: var(--c); border-color: color-mix(in srgb, var(--c) 40%, transparent); font-weight: 500; }
+.w-links .soon { color: var(--dim); border-style: dashed; }
+
+/* Gleisplan */
+.map-box { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 14px; overflow-x: auto; box-shadow: var(--shadow); position: relative; }
+.map-box svg { min-width: 800px; width: 100%; height: auto; display: block; }
+.m-group { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .14em; fill: var(--dim); }
+.m-box { fill: var(--raised); stroke: var(--line-2); stroke-width: 1; }
+.m-title { font-family: var(--font-body); font-size: 13.5px; font-weight: 600; fill: var(--fg); }
+.m-sub { font-family: var(--font-body); font-size: 11.5px; fill: var(--muted); }
+.m-ha { fill: color-mix(in srgb, var(--amber) 3%, transparent); stroke: var(--line-2); stroke-width: 1.2; stroke-dasharray: 4 5; }
+.m-ha-label { font-family: var(--font-mono); font-size: 11px; letter-spacing: .14em; fill: var(--muted); }
+.m-link { fill: none; stroke-width: 1.6; opacity: .55; transition: opacity .2s; }
+.m-link.opt { stroke-dasharray: 5 5; }
+.m-tile { cursor: pointer; }
+.m-tile rect.bg { fill: var(--raised); transition: stroke-width .15s; }
+.m-tile:hover rect.bg, .m-tile:focus-visible rect.bg { stroke-width: 2.4; }
+.m-tile:focus-visible { outline: none; }
+.m-item, .m-dot, .m-pk { transition: opacity .2s; }
+svg.dim .m-link:not(.on), svg.dim .m-item:not(.on), svg.dim .m-dot:not(.on), svg.dim .m-pk:not(.on) { opacity: .1; }
+svg.dim .m-link.on { opacity: .95; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 22px; font-size: 0.84rem; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 8px; }
+.legend i { display: inline-block; width: 26px; border-top: 1.6px solid var(--muted); }
+.legend i.opt { border-top-style: dashed; }
+.legend b { width: 7px; height: 7px; border-radius: 50%; background: var(--amber); display: inline-block; box-shadow: 0 0 8px var(--amber); }
+
+/* Steckbrief */
+.seg { display: flex; gap: 4px; flex-wrap: wrap; padding: 4px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg-2); width: fit-content; max-width: 100%; }
+.tab { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px 6px 6px; border-radius: 9px; border: 1px solid transparent; background: none; color: var(--muted); cursor: pointer; font: inherit; font-family: var(--font-display); font-weight: 600; font-size: 0.92rem; transition: color .15s, background .15s; }
+.tab img { width: 24px; height: 24px; border-radius: 6px; }
+.tab:hover { color: var(--fg); }
+.tab[aria-selected="true"] { background: var(--surface); color: var(--fg); border-color: var(--line-2); box-shadow: 0 0 0 1px color-mix(in srgb, var(--c) 35%, transparent), var(--shadow); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; box-shadow: var(--shadow); }
+.card-head { display: grid; grid-template-columns: 72px minmax(0, 1fr) auto; gap: 20px; padding: 26px; align-items: center; border-bottom: 1px solid var(--line); background: linear-gradient(180deg, color-mix(in srgb, var(--c) 9%, transparent), transparent); }
+.card-head img { width: 72px; height: 72px; display: block; border-radius: 16px; }
+.card-head .tag { font-family: var(--font-display); font-weight: 500; color: var(--c); font-size: 0.92rem; }
+.card-head h3 { font-size: 1.8rem; }
+.card-head .q { color: var(--muted); margin-top: 4px; }
+.copy { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 0.76rem; color: var(--muted); border: 1px solid var(--line-2); border-radius: 8px; padding: 6px 10px; background: var(--raised); cursor: pointer; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.copy:hover { color: var(--fg); }
+.copy svg { width: 14px; height: 14px; flex: none; }
+.card-body { padding: 26px; display: flex; flex-direction: column; gap: 30px; }
+.flow { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); counter-reset: step; }
+.flow li { position: relative; padding: 0 18px 0 0; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.flow li::before { counter-increment: step; content: counter(step, decimal-leading-zero); font-family: var(--font-mono); font-size: 0.68rem; color: var(--c); width: 30px; height: 22px; border-radius: 6px; display: grid; place-items: center; background: color-mix(in srgb, var(--c) 14%, var(--surface)); border: 1px solid color-mix(in srgb, var(--c) 35%, transparent); position: relative; z-index: 1; margin-bottom: 6px; }
+.flow li:last-child::before { color: #2B1B00; background: var(--amber); border-color: var(--amber); }
+.flow li::after { content: ""; position: absolute; top: 11px; left: 36px; right: 6px; border-top: 1px dashed color-mix(in srgb, var(--c) 45%, transparent); }
+.flow li:last-child::after { display: none; }
+.flow b { font-family: var(--font-display); font-weight: 600; font-size: 0.98rem; }
+.flow span { font-size: 0.88rem; color: var(--muted); }
+.split { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 32px; }
+.hood { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+.hood li { display: flex; flex-direction: column; gap: 3px; padding-left: 16px; border-left: 2px solid color-mix(in srgb, var(--c) 55%, transparent); }
+.hood b { font-weight: 600; font-size: 0.95rem; }
+.hood span { font-size: 0.9rem; color: var(--muted); }
+.view-switch { display: flex; gap: 4px; padding: 3px; border: 1px solid var(--line); border-radius: 9px; background: var(--bg-2); width: fit-content; }
+.view-switch button { font: inherit; font-family: var(--font-mono); font-size: 0.74rem; padding: 4px 10px; border-radius: 6px; border: 0; background: none; color: var(--muted); cursor: pointer; }
+.view-switch button[aria-pressed="true"] { background: var(--surface); color: var(--fg); box-shadow: 0 0 0 1px var(--line-2); }
+.kv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0; margin: 0; font-size: 0.9rem; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.kv dt, .kv dd { padding: 8px 12px; border-bottom: 1px solid var(--line); margin: 0; min-width: 0; }
+.kv dt { color: var(--muted); background: var(--bg-2); font-size: 0.84rem; }
+.kv dt:nth-last-of-type(1), .kv dd:last-child { border-bottom: 0; }
+.codewin { border: 1px solid var(--line); border-radius: 12px; background: var(--bg-2); overflow: hidden; min-width: 0; }
+.codewin .ch { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-bottom: 1px solid var(--line); font-family: var(--font-mono); font-size: 0.74rem; color: var(--muted); }
+.codewin pre { margin: 0; padding: 14px 16px; font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.65; overflow-x: auto; color: var(--fg); }
+.tk { color: var(--code-key); } .ts { color: var(--code-str); } .tn { color: var(--code-num); } .tw { color: var(--code-kw); } .td { color: var(--code-dim); }
+.not { border: 1px solid color-mix(in srgb, var(--amber) 35%, var(--line)); background: color-mix(in srgb, var(--amber) 6%, transparent); border-radius: 12px; padding: 12px 16px; font-size: 0.92rem; color: var(--muted); display: flex; gap: 12px; align-items: baseline; }
+.not b { color: var(--fg); font-weight: 600; }
+.card-links { display: flex; flex-wrap: wrap; gap: 8px; }
+.card-links a { font-size: 0.86rem; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--line); }
+.card-links a:hover { background: var(--raised); border-color: var(--line-2); }
+.card-links .demo { color: var(--c); border-color: color-mix(in srgb, var(--c) 40%, transparent); font-weight: 500; }
+
+/* Bauplan */
+.stack { display: grid; gap: 0; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; box-shadow: var(--shadow); }
+.layer { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 20px; align-items: center; padding: 18px 22px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.layer:last-child { border-bottom: 0; }
+.layer.core { background: linear-gradient(90deg, color-mix(in srgb, var(--amber) 9%, var(--surface)), var(--surface) 70%); position: relative; }
+.layer.core::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--amber); }
+.layer h3 { font-size: 1rem; }
+.layer .sub { font-size: 0.8rem; color: var(--muted); font-family: var(--font-mono); }
+.bricks { display: flex; flex-wrap: wrap; gap: 6px; }
+.bricks span { font-size: 0.83rem; padding: 4px 10px; border-radius: 7px; background: var(--raised); border: 1px solid var(--line); }
+.grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.pair { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-family: var(--font-display); font-weight: 600; }
+.pair img { width: 26px; height: 26px; border-radius: 6px; }
+.pair .arrow { color: var(--dim); font-family: var(--font-mono); }
+
+/* Werkstatt */
+.shop { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 20px; align-items: stretch; }
+.shop-stat { display: flex; flex-direction: column; gap: 18px; }
+.ratio { display: flex; flex-direction: column; gap: 10px; }
+.ratio b { font-family: var(--font-display); font-size: clamp(2.4rem, 5vw, 3.4rem); font-weight: 600; letter-spacing: -0.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+.ratio .meter { height: 8px; border-radius: 99px; background: var(--raised); border: 1px solid var(--line); overflow: hidden; }
+.ratio .meter i { display: block; height: 100%; background: linear-gradient(90deg, var(--amber), color-mix(in srgb, var(--amber) 60%, var(--fg))); border-radius: 99px; }
+.agents { display: flex; flex-wrap: wrap; gap: 6px; }
+.agents a { font-family: var(--font-mono); font-size: 0.76rem; padding: 4px 9px; border-radius: 7px; border: 1px solid var(--line); color: var(--muted); }
+.agents a:hover { color: var(--fg); border-color: var(--line-2); }
+.loop { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; background: var(--surface); box-shadow: var(--shadow); }
+.lp { padding: 18px 16px; border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 6px; min-width: 0; position: relative; }
+.lp:last-child { border-right: 0; }
+.lp .who { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: .1em; text-transform: uppercase; display: inline-flex; align-items: center; gap: 6px; }
+.lp .who::before { content: ""; width: 7px; height: 7px; border-radius: 2px; background: currentColor; }
+.who.human { color: var(--amber-ink); }
+.who.agent { color: var(--sw); }
+.who.ci { color: var(--esw); }
+.lp b { font-family: var(--font-display); font-weight: 600; }
+.lp span { font-size: 0.84rem; color: var(--muted); }
+.lp.gate { background: color-mix(in srgb, var(--amber) 7%, transparent); }
+
+/* Lebensweg */
+.term { border: 1px solid var(--line-2); border-radius: 14px; background: #0A0D11; overflow: hidden; box-shadow: var(--shadow); color: #D9DEE5; }
+.term .ch { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-bottom: 1px solid #1E252F; font-family: var(--font-mono); font-size: 0.74rem; color: #7D8796; }
+.term .ch .dots i { background: #2A323D; }
+.term .ch button { margin-left: auto; font: inherit; color: #B8C0CC; background: #141A22; border: 1px solid #2A323D; border-radius: 7px; padding: 3px 10px; cursor: pointer; }
+.term .ch button:hover { color: #fff; }
+.term pre { margin: 0; padding: 16px 18px; font-family: var(--font-mono); font-size: 0.82rem; line-height: 1.75; overflow-x: auto; min-height: 15.5em; }
+.term .p { color: #F5A623; } .term .c { color: #E6E9ED; } .term .ok { color: #4CC38A; } .term .d { color: #6E7887; } .term .h { color: #8CC2F0; }
+.term .cur { display: inline-block; width: 0.55em; height: 1.1em; background: #F5A623; vertical-align: -0.2em; animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.life { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.steps { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--surface); box-shadow: var(--shadow); }
+.st { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 12px; padding: 13px 16px; border-bottom: 1px solid var(--line); align-items: start; }
+.st:last-child { border-bottom: 0; }
+.st i { font-style: normal; font-family: var(--font-mono); font-size: 0.7rem; color: var(--muted); border: 1px solid var(--line-2); border-radius: 6px; height: 22px; display: grid; place-items: center; margin-top: 2px; }
+.st:last-child i { background: var(--amber); color: #2B1B00; border-color: var(--amber); }
+.st b { font-family: var(--font-display); font-weight: 600; }
+.st span { display: block; font-size: 0.86rem; color: var(--muted); }
+
+/* Zahlen */
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow); }
+table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+th { text-align: left; font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); font-weight: 500; padding: 14px 16px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; background: var(--bg-2); }
+td { padding: 12px 16px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+td.r, th.r { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+tbody tr { transition: background .15s; }
+tbody tr:hover { background: var(--raised); }
+tfoot td { border-bottom: 0; font-weight: 600; background: var(--bg-2); }
+.tn-name { display: inline-flex; align-items: center; gap: 10px; font-weight: 600; }
+.tn-name img { width: 22px; height: 22px; border-radius: 5px; }
+.barcell { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; min-width: 150px; }
+.barcell i { height: 6px; border-radius: 99px; background: var(--raised); border: 1px solid var(--line); position: relative; overflow: hidden; }
+.barcell i::after { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--v); background: var(--c); border-radius: 99px; }
+
+/* Mitarbeit */
+.ties { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 32px; }
+.ties li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; align-items: baseline; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.ties a b { font-weight: 600; }
+.ties a:hover b { color: var(--amber-ink); }
+.ties .repo { font-family: var(--font-mono); font-size: 0.74rem; color: var(--dim); }
+.ties .role { font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); border: 1px solid var(--line-2); border-radius: 999px; padding: 1px 8px; }
+.ties .what { grid-column: 1 / -1; font-size: 0.88rem; color: var(--muted); }
+
+footer { margin-top: 110px; border-top: 1px solid var(--line); background: var(--bg-2); }
+footer .wrap { padding-block: 28px 40px; display: flex; justify-content: space-between; gap: 14px 32px; flex-wrap: wrap; font-size: 0.82rem; color: var(--muted); }
+footer .mono { font-size: 0.76rem; color: var(--dim); }
+
+/* Befehlspalette */
+.cmdk { position: fixed; inset: 0; z-index: 50; background: color-mix(in srgb, var(--bg) 60%, transparent); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); display: flex; justify-content: center; align-items: flex-start; padding: calc(env(safe-area-inset-top, 0px) + 12vh) max(16px, env(safe-area-inset-right, 0px)) 16px max(16px, env(safe-area-inset-left, 0px)); }
+.cmdk[hidden] { display: none; }
+.cmdk-box { width: min(620px, 100%); background: var(--surface); border: 1px solid var(--line-2); border-radius: 16px; box-shadow: 0 40px 80px -30px rgba(0,0,0,.6); overflow: hidden; }
+.cmdk-in { display: flex; align-items: center; gap: 10px; padding: 0 16px; border-bottom: 1px solid var(--line); }
+.cmdk-in svg { width: 18px; height: 18px; color: var(--dim); flex: none; }
+.cmdk input { flex: 1; height: 54px; border: 0; background: none; color: var(--fg); font: inherit; font-size: 1rem; outline: none; min-width: 0; }
+.cmdk ul { list-style: none; margin: 0; padding: 6px; max-height: min(52vh, 420px); overflow-y: auto; }
+.cmdk li { display: flex; align-items: center; gap: 12px; padding: 9px 12px; border-radius: 9px; cursor: pointer; font-size: 0.93rem; }
+.cmdk li img { width: 20px; height: 20px; border-radius: 5px; }
+.cmdk li .ico { width: 20px; height: 20px; border-radius: 5px; display: grid; place-items: center; background: var(--raised); border: 1px solid var(--line); font-family: var(--font-mono); font-size: 0.7rem; color: var(--muted); flex: none; }
+.cmdk li small { margin-left: auto; font-family: var(--font-mono); font-size: 0.7rem; color: var(--dim); }
+.cmdk li[aria-selected="true"] { background: var(--raised); box-shadow: inset 0 0 0 1px var(--line-2); }
+.cmdk .grp { font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); padding: 10px 12px 4px; cursor: default; }
+.cmdk-foot { display: flex; gap: 16px; padding: 10px 16px; border-top: 1px solid var(--line); font-size: 0.74rem; color: var(--dim); font-family: var(--font-mono); flex-wrap: wrap; }
+.toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 24px); transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 8px 14px; border-radius: 9px; font-size: 0.86rem; z-index: 60; }
+
+@media (max-width: 1020px) {
+  .nav { display: none; }
+  .hero .wrap { grid-template-columns: minmax(0, 1fr); gap: 40px; padding-block: 56px 60px; }
+  .kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .kpi:nth-child(4) { border-right: 0; }
+  .kpi:nth-child(n+5) { border-top: 1px solid var(--line); }
+  .g4, .grid3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .split, .shop, .life { grid-template-columns: minmax(0, 1fr); }
+  .loop { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .lp:nth-child(3) { border-right: 0; }
+  .lp:nth-child(n+4) { border-top: 1px solid var(--line); }
+  .sec-head { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 640px) {
+  .brand small, .kbtn .kt { display: none; }
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kpi { border-right: 1px solid var(--line) !important; border-top: 1px solid var(--line); }
+  .kpi:nth-child(2n) { border-right: 0 !important; }
+  .kpi:nth-child(-n+2) { border-top: 0; }
+  .g4, .g2, .grid3, .ties { grid-template-columns: minmax(0, 1fr); }
+  .mon-row { grid-template-columns: 22px 84px minmax(0, 1fr) 78px; gap: 8px; padding: 8px 12px; }
+  .mon-row .sig { display: none; }
+  .layer { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .card-head { grid-template-columns: 52px minmax(0, 1fr); gap: 14px; padding: 18px; }
+  .card-head img { width: 52px; height: 52px; border-radius: 12px; }
+  .card-head h3 { font-size: 1.4rem; }
+  .card-head .copy { grid-column: 1 / -1; }
+  .card-body { padding: 18px; }
+  .flow { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .flow li { padding: 0 0 0 42px; }
+  .flow li::before { position: absolute; left: 0; top: 0; }
+  .flow li::after { display: none; }
+  .loop { grid-template-columns: minmax(0, 1fr); }
+  .lp { border-right: 0 !important; border-top: 1px solid var(--line); }
+  .lp:first-child { border-top: 0; }
+  main section { padding-block: 72px 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+</style>
+</head>
+<body>
+
+<div class="bar gutter">
+  <div class="wrap">
+    <a class="brand" href="#top" data-ta="aria-label:top"><span class="mark" id="mark" aria-hidden="true"></span><span data-t="family">Die Wacht-Familie</span> <small>/ n42net</small></a>
+    <nav class="nav" data-ta="aria-label:sections" data-t="nav">
+      <a href="#wachten">Wachten</a><a href="#gleisplan">Gleisplan</a><a href="#steckbrief">Steckbrief</a><a href="#bauplan">Bauplan</a><a href="#werkstatt">Werkstatt</a><a href="#lebensweg">Lebensweg</a><a href="#zahlen">Zahlen</a>
+    </nav>
+    <div class="bar-tools">
+      <button class="kbtn" id="open-cmdk" type="button" data-ta="aria-label:openCmdk"><span class="kt" data-t="jump">Springen zu …</span><kbd id="kbd-hint">Strg K</kbd></button>
+      <a class="ibtn lang" id="lang" href="?lang=en" hreflang="en" lang="en" title="English">EN</a>
+      <button class="ibtn" id="theme" type="button" data-ta="aria-label:themeBtn"></button>
+    </div>
+  </div>
+</div>
+
+<header class="hero gutter" id="top">
+  <div class="wrap">
+    <div class="hero-copy">
+      <span class="status"><span class="beacon pulse"></span><span id="status-text">Sechs Integrationen für Home Assistant</span></span>
+      <h1 data-ta="aria-label:family"><span class="tw-text fam" id="tw-text" aria-hidden="true" data-t="family">Die Wacht-Familie</span><span class="caret" id="tw-caret" aria-hidden="true"></span></h1>
+      <p class="tw-sub" id="tw-sub" aria-hidden="true"><span class="mark" id="tw-mark"></span><span id="tw-sub-text" data-t="familySub">Sechs Integrationen, eine Familie.</span></p>
+      <p class="lede" data-t="lede">Sechs Integrationen für Home Assistant. Vier rund um <b>Energie</b>: Wärmepumpe, Stromtarif, Batteriespeicher und PV-Einspeisung. Zwei für <b>unterwegs und informiert</b>: Verkehrslage und Eilmeldungen. Lokal gerechnet, ohne Fremdbibliotheken, offen dokumentiert. Gebaut mit einem KI-Agenten unter festen Regeln, freigegeben von einem Menschen.</p>
+      <div class="cta">
+        <a class="btn primary" href="#wachten"><span data-t="ctaDemos">Demos ansehen</span>
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+        <a class="btn" href="https://github.com/n42net">
+          <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          GitHub</a>
+      </div>
+    </div>
+    <div class="monitor" data-ta="aria-label:monAria">
+      <div class="mon-head"><span class="label"><span class="beacon pulse"></span><span data-t="monTitle">Kanal-Monitor</span></span><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span></div>
+      <div id="monitor"></div>
+      <div class="mon-foot"><span data-t="monFoot">Signalbilder synthetisch, keine Messwerte</span><span id="mon-clock">t = 0 s</span></div>
+    </div>
+  </div>
+</header>
+
+<div class="kpis" id="kpis"></div>
+
+<main class="gutter">
+  <div class="wrap">
+
+    <section id="wachten">
+      <div class="sec-head" data-t="s1">
+        <div class="label">01 · Die sechs</div>
+        <h2>Was jede Wacht beantwortet</h2>
+        <p>Jede Demo läuft im Browser und rechnet mit dem echten Code der Integration, zeigt aber nur erfundene Daten. Installiert wird über HACS.</p>
+      </div>
+      <div class="six" id="six"></div>
+    </section>
+
+    <section id="gleisplan">
+      <div class="sec-head" data-t="s2">
+        <div class="label">02 · Gleisplan</div>
+        <h2>Woher die Daten kommen und was daraus wird</h2>
+        <p>Links die Quellen, in der Mitte die Integrationen, rechts das, was in Home Assistant entsteht. Über eine Wacht fahren oder sie per Tab wählen: Dann bleiben nur ihre Wege sichtbar. Ein Klick öffnet den Steckbrief.</p>
+      </div>
+      <div class="map-box">
+        <svg id="map" viewBox="0 0 1000 700" role="img" aria-label="Datenquellen, die sechs Integrationen und was in Home Assistant entsteht" data-ta="aria-label:mapAria"></svg>
+      </div>
+      <div class="legend" data-t="legend">
+        <span><i></i>liefert laufend Daten</span>
+        <span><i class="opt"></i>nur auf Wunsch oder für den Rückblick</span>
+        <span><b></b>Datenpaket, schematisch</span>
+      </div>
+    </section>
+
+    <section id="steckbrief">
+      <div class="sec-head" data-t="s3">
+        <div class="label">03 · Steckbrief</div>
+        <h2>Wie eine Wacht innen arbeitet</h2>
+        <p>Ablauf, die tragenden Entscheidungen im Code und die Kennzahlen des Repositorys. Kennzahlen und manifest kommen automatisch aus <code>main</code>.</p>
+      </div>
+      <div class="seg" role="tablist" id="tabs" aria-label="Wacht wählen" data-ta="aria-label:tabsAria"></div>
+      <div id="panel" role="tabpanel"></div>
+    </section>
+
+    <section id="bauplan">
+      <div class="sec-head" data-t="s4">
+        <div class="label">04 · Bauplan</div>
+        <h2>Sechs Integrationen, ein Bauplan</h2>
+        <p>Streckenwacht kam zuerst. Aufbau, Doku, Tests und Release-Ablauf wurden bei ihr erprobt und von den anderen übernommen. Ändert sich das Muster, ziehen alle sechs nach.</p>
+      </div>
+      <div class="stack" aria-label="Schichten einer Wacht" data-ta="aria-label:stackAria" data-t="stack">
+        <div class="layer">
+          <div><h3>Home Assistant</h3><div class="sub">dünne Schicht · HA-Importe nur hier</div></div>
+          <div class="bricks"><span>Config-Flow, nur in der UI</span><span>Laufzeit: Coordinator, Listener oder Stundentakt</span><span>Entitäten</span><span>Aktionen</span><span>Reparaturhinweise</span><span>Diagnose</span><span>de · en</span></div>
+        </div>
+        <div class="layer core">
+          <div><h3>Kern</h3><div class="sub">reines Python · keine HA-Importe</div></div>
+          <div class="bricks"><span>Datenmodell</span><span>Rechnung und Buchung</span><span>Regeln mit Quellenangabe</span><span>Vorlagen als Daten</span><span>Zeitraster in UTC</span><span>Zähler: Sprünge, Resets, Ausreißer</span></div>
+        </div>
+        <div class="layer">
+          <div><h3>Belege</h3><div class="sub">wovon der Kern ausgeht</div></div>
+          <div class="bricks"><span>Fixtures im echten Format, mit erfundenen Werten</span><span>Kern-Tests laufen überall</span><span>HA-Tests in GitHub Actions</span><span>älteste unterstützte HA-Version im Test</span></div>
+        </div>
+      </div>
+      <div class="grid3" data-t="rules">
+        <div class="panel"><div class="label">Abhängigkeiten</div><h3>Keine Fremdbibliotheken</h3><p>Alle sechs haben leere <code>requirements</code>. Abrufe laufen über die Client-Session von HA, sonst nur Standardbibliothek. Ein HA-Update kann so an keiner Bibliotheksversion hängen.</p></div>
+        <div class="panel"><div class="label">Zeit</div><h3>Intern UTC, Tage in Ortszeit</h3><p>Gerechnet wird in UTC, im Viertelstunden- oder Stundenraster. Tage und Monate beginnen um Mitternacht deutscher Zeit, deshalb hat ein Umstellungstag 92 oder 100 Viertelstunden statt 96.</p></div>
+        <div class="panel"><div class="label">Schreiblast</div><h3>SD-Karten schonen</h3><p>Nie bei jedem Zählerwert schreiben. Gespeichert wird an Periodengrenzen, nach Viertelstunden-Ticks oder einmal am Tag. Speicherwacht kommt ganz ohne eigene Datei aus.</p></div>
+        <div class="panel"><div class="label">Formate</div><h3>Nie raten</h3><p>Die Fixtures sind die Wahrheit über das Format einer Quelle, mit Herkunft in <code>_index.json</code>. Eine Vorlage, die nur aus fremdem Quellcode abgeleitet ist, heißt im README „experimentell“.</p></div>
+        <div class="panel"><div class="label">Erkennung</div><h3>Registry statt Entity-ID</h3><p>Wärmewacht und Speicherwacht erkennen die Quelle über Plattform und <code>unique_id</code>. Umbenannte Entitäten stören nicht. Hersteller unterscheiden sich nur in Vorlagen, der Kern kennt keine.</p></div>
+        <div class="panel"><div class="label">Fehler</div><h3>Nie still falsch</h3><p>Meldet ein Zähler <code>unavailable</code> oder fällt eine Quelle aus, blockiert das weder die Integration noch HA. Fehlt ein Wert, ist die Kennzahl <code>unknown</code>, nie 0. Ein Reparaturhinweis sagt, warum.</p></div>
+      </div>
+      <div class="grid3" id="kin"></div>
+    </section>
+
+    <section id="werkstatt">
+      <div class="sec-head" data-t="s5">
+        <div class="label">05 · Werkstatt</div>
+        <h2>Ein Mensch entscheidet, ein Agent baut</h2>
+        <p>Die Wachten entstehen mit Claude Code, einem KI-Agenten. Er schreibt Code, Tests und Doku. Was gebaut wird, was gilt und was veröffentlicht wird, entscheidet der Inhaber. Die Regeln dafür liegen offen in jedem Repository.</p>
+      </div>
+      <div class="shop">
+        <div class="panel shop-stat">
+          <div class="label" data-t="ratioLabel">Belegt in der Git-Historie</div>
+          <div class="ratio">
+            <b id="ratio-num">–</b>
+            <span class="muted" id="ratio-text"></span>
+            <div class="meter" aria-hidden="true"><i id="ratio-bar" style="width:0"></i></div>
+          </div>
+          <p data-t="ratioP">Jeder dieser Commits trägt die Zeile <code>Co-Authored-By: Claude</code>. Verantwortlich bleibt der Inhaber: Push auf <code>main</code>, Releases, HACS-Anträge, Issues und Kommentare in fremden Projekten gehen nur nach seinem Ja raus.</p>
+          <div class="label" style="margin-top:4px" data-t="rulesLabel">Die Regeln des Agenten</div>
+          <div class="agents" id="agents"></div>
+        </div>
+        <div class="codewin" aria-label="Auszug aus einer CLAUDE.md" data-ta="aria-label:codeAria">
+          <div class="ch"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>waermewacht/CLAUDE.md <span class="td" data-t="excerptDe">· Auszug</span></div>
+<pre><span class="tw">## Arbeitsregeln</span>
+
+<span class="tn">1.</span> <b>**Formate nie raten.**</b> Die Dateien in <span class="ts">`tests/fixtures/`</span>
+   sind die Wahrheit über Entitäten, Attribute und
+   Zustandswerte der Quellen.
+<span class="tn">2.</span> <b>**Fachwerte nie aus dem Gedächtnis.**</b> Kennwerte,
+   Emissionsfaktoren, Normwerte nur mit Quelle in
+   <span class="ts">`docs/ENTWICKLUNG.md`</span>.
+<span class="tn">3.</span> <b>**Keine personenbezogenen Daten ins Repo:**</b> keine
+   Zählerstände, Verläufe, Arbeitszahlen oder
+   Anlagendaten des Inhabers – auch nicht als Testwerte.
+
+<span class="tw">## Fallstricke (dauerhaft)</span>
+
+<span class="tk">-</span> <b>**Nie committen, wenn ein Test rot ist.**</b>
+
+<span class="tw">## Release</span>
+
+<span class="td">… Blockiert der Auto-Modus das Veröffentlichen:</span>
+<span class="td">Befehl nennen, der Inhaber führt ihn aus – nie umgehen.</span></pre>
+        </div>
+      </div>
+      <div class="loop" aria-label="Arbeitsablauf zwischen Mensch, Agent und CI" data-ta="aria-label:loopAria" data-t="loop">
+        <div class="lp gate"><span class="who human">Mensch</span><b>Anliegen</b><span>Was soll die Wacht können, was nicht?</span></div>
+        <div class="lp"><span class="who agent">Agent</span><b>Lesen</b><span>Regeln, Doku, Fixtures, verifizierte Eigenheiten der Quelle</span></div>
+        <div class="lp"><span class="who agent">Agent</span><b>Bauen</b><span>Code, Tests, Doku, Changelog auf <code>dev</code></span></div>
+        <div class="lp"><span class="who ci">CI</span><b>Prüfen</b><span>Tests, hassfest, HACS, ältere HA-Version</span></div>
+        <div class="lp gate"><span class="who human">Mensch</span><b>Freigeben</b><span>Text und Ergebnis sehen, dann Ja oder Nein</span></div>
+        <div class="lp"><span class="who ci">GitHub</span><b>Ausliefern</b><span>Release mit ZIP, HACS zeigt das Update</span></div>
+      </div>
+    </section>
+
+    <section id="lebensweg">
+      <div class="sec-head" data-t="s6">
+        <div class="label">06 · Lebensweg</div>
+        <h2>Wie eine neue Version zu Home Assistant kommt</h2>
+        <p>Kein Server dazwischen: Jede HA-Instanz holt sich das Release selbst über HACS. Der Ablauf ist in allen sechs Repositories gleich.</p>
+      </div>
+      <div class="life">
+        <div class="term" aria-label="Release-Ablauf als Terminal" data-ta="aria-label:termAria">
+          <div class="ch"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span id="term-title">release</span><button type="button" id="term-play" data-t="play">▶ abspielen</button></div>
+          <pre id="term"></pre>
+        </div>
+        <div class="steps" id="steps"></div>
+      </div>
+      <div class="grid3" id="side3"></div>
+    </section>
+
+    <section id="zahlen">
+      <div class="sec-head" data-t="s7">
+        <div class="label">07 · Zahlen</div>
+        <h2>Die Repositories im Überblick</h2>
+        <p id="zahlen-stand"></p>
+      </div>
+      <div class="table-wrap"><table id="table"></table></div>
+    </section>
+
+    <section id="mitarbeit">
+      <div class="sec-head" data-t="s8">
+        <div class="label">08 · Mitarbeit</div>
+        <h2>Beiträge zu anderen Projekten</h2>
+        <p>Fehler, die bei der Arbeit an den Wachten in Quell-Integrationen auftauchen, werden dort gemeldet oder behoben statt umgangen.</p>
+      </div>
+      <ul class="ties" id="ties"></ul>
+    </section>
+
+  </div>
+</main>
+
+<footer class="gutter">
+  <div class="wrap">
+    <span data-t="footer">Keine Cookies, kein Tracking, keine Anfragen an Dritte. Alle Werte in den Demos sind erfunden.</span>
+    <span class="mono" id="stand"></span>
+  </div>
+</footer>
+
+<div class="cmdk" id="cmdk" hidden role="dialog" aria-modal="true" aria-label="Befehlspalette" data-ta="aria-label:cmdkAria">
+  <div class="cmdk-box">
+    <div class="cmdk-in">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="9" cy="9" r="6"/><path d="M14 14l4 4"/></svg>
+      <input id="cmdk-input" type="text" placeholder="Wacht, Abschnitt oder Aktion suchen …" autocomplete="off" spellcheck="false" aria-controls="cmdk-list" aria-label="Suchen" data-ta="placeholder:cmdkPh;aria-label:search">
+      <kbd>Esc</kbd>
+    </div>
+    <ul id="cmdk-list" role="listbox" aria-label="Treffer" data-ta="aria-label:hits"></ul>
+    <div class="cmdk-foot" data-t="cmdkFoot"><span>↑ ↓ wählen</span><span>↵ öffnen</span><span>Esc schließen</span></div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="en.js"></script>
+<script>
+(() => {
+  const DATA = window.WACHT_DATA || { wachten: [], generated: '' };
+  const byName = Object.fromEntries(DATA.wachten.map(w => [w.name, w]));
+  // Sprache: ?lang=de|en, sonst Browsersprache. Deutsch steht im HTML, Englisch in en.js.
+  const LANG = (() => {
+    const q = new URLSearchParams(location.search).get('lang');
+    if (q === 'de' || q === 'en') return window.WACHT_EN ? q : 'de';
+    return /^de\b/i.test(navigator.language || '') || !window.WACHT_EN ? 'de' : 'en';
+  })();
+  const EN = window.WACHT_EN || {};
+  const L = (d, e) => LANG === 'en' ? e : d;
+  const LOCALE = L('de-DE', 'en-US');
+  const de = n => Number(n).toLocaleString(LOCALE);
+  const dec = (x, d = 1) => L(x.toFixed(d).replace('.', ','), x.toFixed(d));
+  const date = s => s ? L(s.split('-').reverse().join('.'), s) : '–';
+  if (LANG === 'en') {
+    document.documentElement.lang = 'en';
+    document.title = 'The Wacht family';
+    document.querySelectorAll('[data-t]').forEach(el => { if (EN.text[el.dataset.t] !== undefined) el.innerHTML = EN.text[el.dataset.t]; });
+    document.querySelectorAll('[data-ta]').forEach(el => el.dataset.ta.split(';').forEach(pair => {
+      const [attr, key] = pair.split(':'); if (EN.text[key] !== undefined) el.setAttribute(attr, EN.text[key]);
+    }));
+  }
+  const langBtn = document.getElementById('lang');
+  const other = L('en', 'de');
+  Object.assign(langBtn, { textContent: other.toUpperCase(), hreflang: other, lang: other, title: L('English', 'Deutsch') });
+  const langHref = () => `?lang=${other}${location.hash}`;
+  langBtn.href = langHref();
+  langBtn.addEventListener('click', () => { langBtn.href = langHref(); });
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+  const icon = (name, size = 44) => `<img src="icons/${name}.svg" alt="" width="${size}" height="${size}">`;
+  const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+  /* Handgeschriebene Inhalte. Zahlen kommen aus data.js (tools/build_data.py). */
+  const CONTENT = [
+    {
+      name: 'streckenwacht', k: 'sw', title: 'Streckenwacht', tagline: 'Wacht über deine Strecke.', short: 'Baustellen, Sperrungen, Staus',
+      q: 'Ist auf meinem Weg gerade etwas gesperrt, gestaut oder im Bau?',
+      flow: [
+        ['23 offene Datendienste', 'Autobahn GmbH bundesweit, dazu Länder, Städte und Luxemburg'],
+        ['Abholen je Quelle', 'Ein Coordinator pro Quelle. Fällt eine aus, laufen die anderen weiter'],
+        ['Auf den Bereich zuschneiden', 'Kreis auf der Karte, gewählte Autobahnen und Fahrtrichtungen'],
+        ['Doppelte zusammenfassen', 'Gleiche Straße, höchstens 300 m auseinander: eine Meldung'],
+        ['In HA', 'Kalender, „Störung aktiv“, Reisezeitverlust, Ereignis, Kartenpunkte, eigene Karte'],
+        ['Wofür', 'Push vor der Abfahrt, Nachtbaustellen im Kalender']
+      ],
+      hood: [
+        ['Provider-Muster', 'Jede Quelle ist ein Modul unter <code>providers/</code> und liefert dasselbe Datenmodell. Formate: REST/JSON, GeoJSON, WFS, ZIP mit UTM-Koordinaten, DATEX II.'],
+        ['Bereiche als Config-Subentries', 'Ein Eintrag, darunter beliebig viele Beobachtungsbereiche. Jede Quelle wird einmal abgefragt, jeder Bereich filtert lokal.'],
+        ['Enge Deduplizierung', 'Nur Baustellen und Sperrungen, gleiche Hauptstraße, passender Zeitraum, höchstens 300 m. Abschaltbar.'],
+        ['Eigene Dashboard-Karte', 'Leaflet-Karte im Paket, Daten per WebSocket-Befehl. Die Karte registriert sich selbst als Ressource.'],
+        ['Quellen-Check jede Woche', 'Ein Workflow fragt jede Quelle ab und prüft, ob sie noch so antwortet wie erwartet.']
+      ],
+      not: '<b>Nicht jede Nebenstraße.</b> In Bayern, Hessen und NRW gibt es bisher nur einzelne Städte, in Thüringen, Bremen und dem Saarland nur die Autobahnen.',
+      sig: 'Meldungen im Bereich'
+    },
+    {
+      name: 'eilwacht', k: 'ew', title: 'Eilwacht', tagline: 'Was wichtig ist, meldet sich.', short: 'Eilmeldungen und Regionales',
+      q: 'Gibt es eine Eilmeldung, oder etwas Neues aus meinem Bundesland?',
+      flow: [
+        ['Öffentliche Nachrichten-API', 'Eilmeldungen jede Minute, Regionalnachrichten alle 15 Minuten'],
+        ['Neues erkennen', 'Merkt sich, was schon gemeldet wurde. Nach einem Neustart wird bis zu 6 Stunden nachgereicht'],
+        ['Stichworte prüfen', 'Wächter je Bundesland, auf Wunsch nur mit Wörtern wie „Warnstreik“ oder „S-Bahn“'],
+        ['In HA', 'Ereignis, „Eilmeldung aktiv“, letzte Meldung, Meldungen der letzten 24 Stunden'],
+        ['Wofür', 'Push-Nachricht, Ansage, Lichtsignal. Blueprints liegen bei']
+      ],
+      hood: [
+        ['Ein Coordinator je Endpunkt', 'Gemeinsam für alle Einträge der Instanz. Höchstens 60 Abrufe pro Stunde, egal wie viele Wächter laufen.'],
+        ['Ersatzweg ohne Doppelmeldung', 'Fällt der Eilmeldungs-Endpunkt aus, springt die Startseite ein. Nie beide zugleich, weil sie auf verschiedene Adressen verweisen.'],
+        ['Gesehene Meldungen', 'Ein eigener Speicher merkt sich jede Meldung. Nach einem Neustart wird Verpasstes bis 6 Stunden nachgemeldet, Älteres still gelernt.'],
+        ['Stichwortwächter', 'Wortgrenzen und Umlaute werden beachtet, Ausschlusswörter möglich. Die Demo prüft die Regeln mit einem Selbsttest.'],
+        ['Selten schreiben', 'Keine <code>state_class</code> für Zähler, die selten wechseln. So entsteht keine Langzeitstatistik, die niemand braucht.']
+      ],
+      not: '<b>Kein Nachrichtenleser.</b> Nur Schlagzeile, erster Satz und Link. Keine amtlichen Warnungen, dafür gibt es NINA und den DWD. Kein Angebot der ARD.',
+      sig: 'Eilmeldung aktiv'
+    },
+    {
+      name: 'einspeisewacht', k: 'esw', title: 'Einspeisewacht', tagline: 'Jede Viertelstunde im Blick.', short: 'PV-Einspeisung bei negativen Preisen',
+      q: 'Wie viel meiner PV-Einspeisung wird wegen negativer Strompreise nicht vergütet?',
+      flow: [
+        ['Zähler und Preis', 'Einspeisezähler und Day-Ahead-Preissensor. SMARD.de nur auf Wunsch'],
+        ['Auf Viertelstunden verteilen', 'Jede Zählermeldung zeitanteilig, jede Viertelstunde mit ihrem Preis'],
+        ['Regel bestimmen', 'Welche Fassung von § 51 EEG gilt: aus Inbetriebnahme, Leistung und Smart Meter'],
+        ['Buchen', 'Vergütet oder unvergütet, Erlös und entgangener Erlös. Übersteht Neustarts und Zähler-Resets'],
+        ['In HA', '„Vergütung aktiv“, Kalender „Negative Preise“, Nachholung nach § 51a, Bericht'],
+        ['Wofür', 'Speicher laden, Wallbox starten oder abregeln, wenn es keine Vergütung gibt']
+      ],
+      hood: [
+        ['Buchungskern', 'Viertelstunden-Delta des Zählers mal Preis dieser Viertelstunde, ohne HA-Importe. „Negativ“ heißt kleiner als 0, genau 0 ist vergütet.'],
+        ['Rechtsregeln als Bausteine', 'Je Inbetriebnahme-Zeitraum ein Baustein mit Paragraphen im Code: jede negative Viertelstunde (Solarspitzengesetz 2025), Ausnahmen ohne Smart Meter und unter 2 kW, Altanlagen mit Stundenblöcken.'],
+        ['Schattenwert', 'Greift eine Regel rechtlich noch nicht, bleibt „unvergütet“ bei 0. Ein zweiter Wert zeigt, was entgangen wäre.'],
+        ['SMARD.de nur als Opt-in', 'Für negative Viertelstunden vor der Einrichtung und als Ersatz, wenn der Preissensor länger als eine Stunde schweigt. Ein Fehler dort blockiert nie die Buchung.'],
+        ['Bericht für jeden Zeitraum', 'Die Aktion „Bericht“ rechnet auch rückwirkend aus der Langzeitstatistik.']
+      ],
+      not: '<b>Keine Abrechnung.</b> Die Werte sind eine Orientierung. Es gilt, was der Netzbetreiber mit seinem Zähler misst.',
+      sig: 'Day-Ahead-Preis'
+    },
+    {
+      name: 'tarifwacht', k: 'tw', title: 'Tarifwacht', tagline: 'Jeder Tarif. Jede Viertelstunde.', short: 'Stromtarife im Vergleich',
+      q: 'Was hätte mein Strom mit einem anderen Tarif gekostet?',
+      flow: [
+        ['Zähler und Preise', 'Bezugszähler und Preissensoren. SMARD.de für den Blick zurück'],
+        ['Verbrauch je Viertelstunde merken', 'Fällt der Zähler aus, wird die Lücke nachgebucht'],
+        ['Jeden Tarif durchrechnen', 'Festpreis, dynamisch, Modul 3, Grundpreise, Preisänderungen ab einem Datum'],
+        ['Vergleichen', 'Differenz zum aktuellen Tarif und günstigster Tarif bisher'],
+        ['In HA', 'Kosten und Durchschnittspreis je Tarif, Bericht auch für die Zeit vor der Einrichtung'],
+        ['Wofür', 'Entscheiden, ob sich ein Tarifwechsel lohnt']
+      ],
+      hood: [
+        ['Verlauf statt Summen', 'Verbrauch und jeder gesehene Preis liegen je Viertelstunde vor, 96 Werte je Tag. Beim Start werden alle Tarife neu gerechnet, deshalb gilt ein neuer Tarif auch rückwirkend.'],
+        ['Tarife als Config-Subentries', 'Jeder Tarif ist ein Untereintrag. Eine Änderung lädt den Eintrag neu und rechnet den Verlauf durch.'],
+        ['Modul 3 nach § 14a EnWG', 'Zeitvariable Netzentgelte mit Niedrig- und Hochtarif je Quartal, auf einen Börsentarif aufgesetzt.'],
+        ['Rückblick', 'Verbrauch aus den Stundenwerten der Langzeitstatistik, Börsenpreise von SMARD.de, nur auf ausdrückliche Aktion.'],
+        ['Kern aus der Einspeisewacht', 'Zeitraster, Preise und Zähler stammen aus deren Buchungskern, kopiert und seitdem eigenständig.']
+      ],
+      not: '<b>Gleiches Verhalten unterstellt.</b> Wer mit dynamischem Tarif Verbrauch in billige Stunden schiebt, spart mehr, als der Vergleich zeigt.',
+      sig: 'dynamisch ggü. Festpreis'
+    },
+    {
+      name: 'waermewacht', k: 'ww', title: 'Wärmewacht', tagline: 'Jede Kilowattstunde. Jeder Takt.', short: 'Gesundheits-Check für Wärmepumpen',
+      q: 'Wie effizient arbeitet meine Wärmepumpe wirklich?',
+      flow: [
+        ['Was die Wärmepumpe liefert', 'Entitäten aus EMS-ESP, Bosch HomeCom oder einer der Beta-Vorlagen'],
+        ['Zuordnen', 'Die Vorlage findet Wärme- und Stromzähler, Kompressor und Betriebsart selbst'],
+        ['Läufe erkennen', 'Kompressorläufe, Abtauungen und Stillstand getrennt'],
+        ['Rechnen', 'Arbeitszahl = Summe Wärme ÷ Summe Strom, je Betriebsart und Zeitraum'],
+        ['In HA', 'Arbeitszahlen, Takte, Heizlast, Kosten und Gasvergleich, Gesundheits-Check'],
+        ['Wofür', 'Merken, wenn die Effizienz sinkt oder der Heizstab unnötig läuft']
+      ],
+      hood: [
+        ['Vorlagen als Daten', 'Welche Entität welches Signal ist und welcher Zustandswert was bedeutet, steht in Vorlagen. EMS-ESP und Bosch HomeCom erprobt, Beta-Vorlagen für Luxtronik, Stiebel ISG, HeishaMon, Lambda, iDM, Viessmann, Mitsubishi Ecodan, Vaillant, Waterkotte und Daikin.'],
+        ['Stillstand abgetrennt', 'Strom bei stehendem Kompressor zählt nicht in die Arbeitszahl je Betriebsart, wohl aber in die Gesamt-JAZ. Vorgehen wie im Feldtest des Fraunhofer ISE, Bilanzgrenze nach SEPEMO benannt.'],
+        ['Rückblick aus der Statistik', 'Beim Einrichten wird die laufende Saison aus der Langzeitstatistik gelesen. Kennlinie und Gesundheits-Check vergleichen Zeiträume mit derselben Methode.'],
+        ['Analyse', 'AZ-Kennlinie über der Außentemperatur, Heizlast in W/K mit Heizgrenze, Gradtage, Takten je Außentemperatur.'],
+        ['Gas-Modus', 'Eigener Eintragstyp für Gasheizungen vor dem Umstieg: Heizlast aus dem Gasverbrauch.']
+      ],
+      not: '<b>Liest nur, steuert nie.</b> Eine Orientierung, keine Fachdiagnose. Die Werte sind so gut wie die Zähler der Wärmepumpe.',
+      sig: 'Kompressor, Abtauung'
+    },
+    {
+      name: 'speicherwacht', k: 'spw', title: 'Speicherwacht', tagline: 'Jede Ladung. Jeder Zyklus.', short: 'Gesundheits-Check für Batteriespeicher',
+      q: 'Wie gut arbeitet mein Batteriespeicher, und lässt er nach?',
+      flow: [
+        ['Langzeitstatistik', 'Lade- und Entladezähler und Ladezustand, Stunde für Stunde'],
+        ['Zähler bereinigen', 'Rücksprünge, Resets und Ausreißer heraus'],
+        ['Tage einteilen', 'Betriebstage und Ruhetage getrennt'],
+        ['Rechnen', 'Wirkungsgrad mit Ladezustand-Korrektur, Vollzyklen, Ruheverlust, Kapazität'],
+        ['In HA', 'Werte je Monat, Jahr und gesamt, Gesundheits-Check, Bericht'],
+        ['Wofür', 'Merken, wenn der Speicher Kapazität oder Wirkungsgrad verliert']
+      ],
+      hood: [
+        ['Nur Langzeitstatistik', 'Keine eigene Speicherdatei, keine Zustands-Listener für die Rechnung. Live und Rückblick rechnen gleich, jede Stunde aus den Stundenwerten.'],
+        ['Zählerstand statt Änderung', 'Gelesen wird der Stand je Stunde. Darüber läuft der Zählerbaustein aus der Wärmewacht.'],
+        ['Wirkungsgrad als eigene Näherung', '(Entladung + ΔLadezustand × Kapazität) ÷ Ladung über die Betriebstage. So in README und Doku benannt.'],
+        ['Bilanzgrenze je Eintrag', 'Akku (DC) oder System (AC), als Attribut am Ergebnis, nie gemischt.'],
+        ['Vorlagen', 'Fronius erprobt, Huawei Solar, solarman und Anker SOLIX als Beta.']
+      ],
+      not: '<b>Liest nur, steuert nie.</b> Die geschätzte Kapazität ersetzt nie die Angabe aus der Einrichtung. Sie stammt nur aus Entladungen von voll bis leer.',
+      sig: 'Ladezustand'
+    }
+  ];
+  // Zwei Themen; innerhalb nach Komplexität, Bedeutung und möglicher Reichweite
+  const GROUPS = [
+    { id: 'energie', title: 'Energie', note: 'liest Entitäten, rechnet lokal', sub: 'Wärme, Strom, Speicher und Einspeisung im eigenen Haus. Keine Netzabfragen außer SMARD.de auf Wunsch.', names: ['waermewacht', 'tarifwacht', 'speicherwacht', 'einspeisewacht'] },
+    { id: 'unterwegs', title: 'Unterwegs und informiert', note: 'offene Daten aus dem Netz', sub: 'Verkehrslage und Eilmeldungen als Auslöser für Automationen.', names: ['streckenwacht', 'eilwacht'] }
+  ];
+  if (LANG === 'en') {
+    CONTENT.forEach(c => Object.assign(c, EN.content[c.name]));
+    GROUPS.forEach(g => Object.assign(g, EN.groups[g.id]));
+  }
+  const RANK = GROUPS.flatMap(g => g.names);
+  const groupOf = name => GROUPS.find(g => g.names.includes(name));
+  CONTENT.sort((a, b) => RANK.indexOf(a.name) - RANK.indexOf(b.name));
+  const C = Object.fromEntries(CONTENT.map(c => [c.name, c]));
+  const ORDER = CONTENT.map(c => c.name);
+  const W = name => byName[name] || {};
+  const sum = key => DATA.wachten.reduce((a, w) => a + (w[key] || 0), 0);
+  const gen = DATA.generated ? new Date(DATA.generated.replace('Z', ':00Z')) : null;
+  const genText = gen && !isNaN(gen) ? gen.toLocaleString(L('de-DE', 'en-GB'), { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Berlin' }) : '–';
+
+  const pill = w => {
+    const h = w.hacs || {};
+    if (h.state === 'default') return '<span class="pill in">HACS</span>';
+    if (h.state === 'pending') return `<span class="pill wait">${L('HACS-Antrag offen', 'HACS request open')}</span>`;
+    return `<span class="pill">${L('eigenes Repo', 'custom repository')}</span>`;
+  };
+
+  /* ---------- Statusleiste, Marke ---------- */
+  document.getElementById('mark').innerHTML = CONTENT.map(c => `<i style="background:var(--tile-${c.k})"></i>`).join('');
+  const inHacs = DATA.wachten.filter(w => w.hacs && w.hacs.state === 'default').length;
+  const lastCommit = DATA.wachten.map(w => w.last_commit).filter(Boolean).sort().pop();
+  document.getElementById('status-text').textContent =
+    `${DATA.wachten.length} ${L('Integrationen', 'integrations')} · ${inHacs} in HACS · ${L('zuletzt geändert', 'last change')} ${date(lastCommit)}`;
+  document.getElementById('kbd-hint').textContent = /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘ K' : L('Strg K', 'Ctrl K');
+
+  /* ---------- Überschrift: tippt sich durch die Familie ---------- */
+  (() => {
+    const text = document.getElementById('tw-text'), caret = document.getElementById('tw-caret');
+    const sub = document.getElementById('tw-sub'), subText = document.getElementById('tw-sub-text');
+    const markHtml = CONTENT.map(c => `<i style="background:var(--tile-${c.k})"></i>`).join('');
+    document.getElementById('tw-mark').innerHTML = markHtml;
+    const FAMILY = { text: L('Die Wacht-Familie', 'The Wacht family'), sub: L('Sechs Integrationen, eine Familie.', 'Six integrations, one family.'), hold: 4200 };
+    const SEQ = [FAMILY, ...CONTENT.map(c => ({ text: c.title, k: c.k, name: c.name, sub: c.tagline, hold: 2300 }))];
+    let idx = 0, visible = true, timer = null;
+    const wait = ms => new Promise(res => { timer = setTimeout(res, ms); });
+    const until = async () => { while (!visible || document.hidden) await wait(400); };
+    function setSub(item) {
+      sub.classList.add('out');
+      setTimeout(() => {
+        sub.style.setProperty('--c', item.k ? `var(--${item.k})` : 'var(--muted)');
+        sub.firstElementChild.outerHTML = item.k ? `<img src="icons/${item.name}.svg" alt="" width="22" height="22">` : `<span class="mark">${markHtml}</span>`;
+        subText.textContent = item.sub;
+        sub.classList.remove('out');
+      }, 220);
+    }
+    function style(item) {
+      text.classList.toggle('fam', !item.k);
+      text.style.setProperty('--c', item.k ? `var(--${item.k})` : 'var(--fg)');
+    }
+    async function run() {
+      text.textContent = '';
+      caret.classList.add('busy');
+      await wait(500);
+      for (let n = 1; n <= FAMILY.text.length; n++) { text.textContent = FAMILY.text.slice(0, n); await wait(60 + Math.random() * 70); }
+      caret.classList.remove('busy');
+      await wait(FAMILY.hold);
+      for (;;) {
+        await until();
+        const cur = SEQ[idx], next = SEQ[(idx + 1) % SEQ.length];
+        caret.classList.add('busy');
+        for (let n = cur.text.length; n >= 0; n--) { text.textContent = cur.text.slice(0, n); await wait(n > cur.text.length - 3 ? 70 : 28); }
+        style(next); setSub(next);
+        await wait(260);
+        for (let n = 1; n <= next.text.length; n++) { text.textContent = next.text.slice(0, n); await wait(55 + Math.random() * 60); }
+        caret.classList.remove('busy');
+        idx = (idx + 1) % SEQ.length;
+        await wait(next.hold);
+      }
+    }
+    new IntersectionObserver(es => { visible = es[0].isIntersecting; }).observe(text);
+    if (!reduced.matches) run();
+  })();
+
+  /* ---------- Darstellung ---------- */
+  const themeBtn = document.getElementById('theme');
+  const ICONS = {
+    system: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.5" y="2.5" width="13" height="9" rx="1.5"/><path d="M5.5 14h5"/></svg>',
+    light: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="3"/><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"/></svg>',
+    dark: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13.5 9.5A5.5 5.5 0 016.5 2.5a5.5 5.5 0 107 7z"/></svg>'
+  };
+  const THEME_NAMES = { system: 'System', light: L('Hell', 'Light'), dark: L('Dunkel', 'Dark') };
+  let theme = 'system';
+  try { theme = localStorage.getItem('wacht-theme') || 'system'; } catch (e) {}
+  const applyTheme = t => {
+    theme = t;
+    if (t === 'system') document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', t);
+    themeBtn.innerHTML = ICONS[t];
+    themeBtn.title = `${L('Darstellung', 'Theme')}: ${THEME_NAMES[t]}`;
+    try { localStorage.setItem('wacht-theme', t); } catch (e) {}
+    refreshColors();
+  };
+  const nextTheme = () => applyTheme({ system: 'light', light: 'dark', dark: 'system' }[theme]);
+  themeBtn.addEventListener('click', nextTheme);
+
+  /* ---------- KPI-Leiste ---------- */
+  const noReq = DATA.wachten.length && DATA.wachten.every(w => !w.requirements || !w.requirements.length);
+  document.getElementById('kpis').innerHTML = [
+    [DATA.wachten.length, L('Integrationen', 'integrations')],
+    [de(sum('commits')), L('Commits auf main', 'commits on main')],
+    [de(sum('releases')), 'Releases'],
+    [de(sum('test_functions')), L('Testfunktionen', 'test functions')],
+    [de(sum('python_lines')), L('Zeilen Python', 'lines of Python')],
+    [noReq ? '0' : '–', L('Fremdbibliotheken', 'third-party libraries')],
+    [`${inHacs}/${DATA.wachten.length}`, L('in der HACS-Standardliste', 'in the HACS default list')]
+  ].map(([b, s]) => `<div class="kpi"><b>${b}</b><span>${s}</span></div>`).join('');
+
+  /* ---------- Kanal-Monitor ---------- */
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  const GEN = {
+    streckenwacht: () => { let n = 2; return () => { if (Math.random() < 0.012) n = Math.max(0, Math.min(5, n + (Math.random() < 0.5 ? -1 : 1))); return { v: n / 5, text: L(`${n} Meldung${n === 1 ? '' : 'en'}`, `${n} event${n === 1 ? '' : 's'}`), step: true }; }; },
+    eilwacht: () => { let a = 0; return () => { if (a < 0.02 && Math.random() < 0.004) a = 1; a *= 0.975; return { v: a, text: a > 0.3 ? L('aktiv', 'active') : L('ruhig', 'quiet'), hot: a > 0.3 }; }; },
+    einspeisewacht: () => { let t = rnd(0, 600); return () => { t += 1; const p = 5 + 9 * Math.cos(2 * Math.PI * t / 520) - 11 * Math.exp(-Math.pow(((t % 520) - 260) / 55, 2)) + 1.2 * Math.sin(t / 7); return { v: (p + 14) / 30, text: `${p >= 0 ? '+' : '−'}${dec(Math.abs(p))} ct`, zero: 14 / 30, hot: p < 0 }; }; },
+    tarifwacht: () => { let t = rnd(0, 400); return () => { t += 1; const d = 28.4 + 8 * Math.sin(2 * Math.PI * t / 380) + 3 * Math.sin(2 * Math.PI * t / 91) + rnd(-0.6, 0.6); const diff = d - 28.4; return { v: (d - 14) / 30, ref: 14.4 / 30, text: `Δ ${diff >= 0 ? '+' : '−'}${dec(Math.abs(diff))} ct` }; }; },
+    waermewacht: () => { let on = true, left = 160, p = 0.6, az = 4.1, defrost = 0; return () => {
+      left -= 1; if (left <= 0) { on = !on; left = on ? rnd(120, 220) : rnd(60, 140); }
+      if (on && defrost <= 0 && Math.random() < 0.003) defrost = 16;
+      const target = !on ? 0.02 : defrost > 0 ? 0.12 : 0.55 + 0.08 * Math.sin(left / 9);
+      if (defrost > 0) defrost -= 1;
+      p += (target - p) * 0.12; az += (rnd(3.7, 4.5) - az) * 0.01;
+      return { v: p, text: on ? (defrost > 0 ? L('Abtauen', 'defrost') : `${L('AZ', 'PF')} ${dec(az)}`) : L('aus', 'off') }; }; },
+    speicherwacht: () => { let t = rnd(0, 700), soc = 55; return () => { t += 1; const sun = Math.sin(2 * Math.PI * t / 700); soc += sun > 0.1 ? 0.22 : -0.12; soc = Math.max(8, Math.min(100, soc)); return { v: soc / 100, text: `SoC ${Math.round(soc)} %` }; }; }
+  };
+  const monitor = document.getElementById('monitor');
+  monitor.innerHTML = CONTENT.map(c => `<div class="mon-row" style="--c:var(--${c.k})">${icon(c.name, 22)}<div><span class="nm">${c.title}</span><span class="sig">${c.sig}</span></div><canvas data-n="${c.name}" aria-hidden="true"></canvas><span class="read" data-r="${c.name}">–</span></div>`).join('');
+  const channels = CONTENT.map(c => ({ c, gen: GEN[c.name](), buf: [], canvas: monitor.querySelector(`canvas[data-n="${c.name}"]`), read: monitor.querySelector(`[data-r="${c.name}"]`) }));
+  let COLORS = {};
+  function refreshColors() {
+    COLORS = { line: css('--line'), dim: css('--dim'), amber: css('--amber') };
+    CONTENT.forEach(c => COLORS[c.name] = css('--' + c.k));
+  }
+  refreshColors();
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', refreshColors);
+  const STEP = 2;
+  function sizeCanvases() {
+    channels.forEach(ch => {
+      const r = ch.canvas.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 2);
+      ch.canvas.width = Math.max(1, Math.round(r.width * dpr)); ch.canvas.height = Math.max(1, Math.round(r.height * dpr));
+      ch.w = r.width; ch.h = r.height; ch.dpr = dpr; ch.max = Math.ceil(r.width / STEP) + 2;
+    });
+  }
+  function hexA(hex, a) {
+    const m = hex.replace('#', ''); if (m.length !== 6) return hex;
+    return `rgba(${parseInt(m.slice(0, 2), 16)},${parseInt(m.slice(2, 4), 16)},${parseInt(m.slice(4, 6), 16)},${a})`;
+  }
+  function drawChannel(ch) {
+    const g = ch.canvas.getContext('2d'), { w, h, dpr, buf } = ch;
+    g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+    const pad = 4, Y = v => h - pad - Math.max(0, Math.min(1, v)) * (h - 2 * pad);
+    const last = buf[buf.length - 1] || {};
+    g.lineWidth = 1; g.setLineDash([2, 3]); g.strokeStyle = COLORS.line;
+    if (last.zero !== undefined || last.ref !== undefined) { const y = Y(last.zero ?? last.ref); g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke(); }
+    g.setLineDash([]);
+    const col = COLORS[ch.c.name] || '#888', x0 = w - (buf.length - 1) * STEP;
+    g.beginPath();
+    buf.forEach((s, i) => { const x = x0 + i * STEP, y = Y(s.v); if (i === 0) g.moveTo(x, y); else if (s.step) { g.lineTo(x, Y(buf[i - 1].v)); g.lineTo(x, y); } else g.lineTo(x, y); });
+    g.lineWidth = 1.6; g.strokeStyle = col; g.stroke();
+    g.lineTo(x0 + (buf.length - 1) * STEP, h); g.lineTo(x0, h); g.closePath();
+    const grad = g.createLinearGradient(0, 0, 0, h); grad.addColorStop(0, hexA(col, 0.22)); grad.addColorStop(1, hexA(col, 0));
+    g.fillStyle = grad; g.fill();
+    if (last.zero !== undefined) { // negative Preise in Amber hervorheben
+      g.fillStyle = hexA(COLORS.amber, 0.28);
+      buf.forEach((s, i) => { if (s.v < s.zero) { const x = x0 + i * STEP; g.fillRect(x - STEP / 2, Y(s.zero), STEP, Y(s.v) - Y(s.zero)); } });
+    }
+    if (buf.length) { const x = x0 + (buf.length - 1) * STEP, y = Y(last.v); g.fillStyle = col; g.beginPath(); g.arc(x - 1, y, 2.6, 0, Math.PI * 2); g.fill(); g.fillStyle = hexA(col, 0.25); g.beginPath(); g.arc(x - 1, y, 6, 0, Math.PI * 2); g.fill(); }
+  }
+  sizeCanvases();
+  channels.forEach(ch => { for (let i = 0; i < ch.max; i++) ch.buf.push(ch.gen()); });
+  let monVisible = true, clock = 0, frame = 0;
+  function monTick() {
+    channels.forEach(ch => { ch.buf.push(ch.gen()); while (ch.buf.length > ch.max) ch.buf.shift(); drawChannel(ch);
+      const s = ch.buf[ch.buf.length - 1]; ch.read.textContent = s.text; ch.read.style.color = s.hot ? 'var(--amber-ink)' : ''; });
+    clock += 1 / 30; if (++frame % 15 === 0) document.getElementById('mon-clock').textContent = `t = ${Math.floor(clock)} s`;
+  }
+  channels.forEach(drawChannel); monTick();
+  new ResizeObserver(() => { sizeCanvases(); channels.forEach(drawChannel); }).observe(monitor);
+  new IntersectionObserver(es => { monVisible = es[0].isIntersecting; }).observe(monitor);
+
+  /* ---------- Die sechs ---------- */
+  const card = c => {
+    const w = W(c.name);
+    const demo = w.pages ? `<a class="demo" href="${w.pages}?lang=${LANG}">Demo ↗</a>` : `<span class="soon">${L('Demo folgt', 'Demo coming soon')}</span>`;
+    return `<article class="w" style="--c:var(--${c.k})">
+      <div class="w-top">${icon(c.name)}<div><div class="tag">${c.tagline}</div><h3>${c.title}</h3></div></div>
+      <p class="q">${c.q}</p>
+      <div class="w-meta"><span class="pill">v${w.version || '–'}</span>${pill(w)}<span class="pill">${de(w.test_functions || 0)} Tests</span></div>
+      <div class="w-links">${demo}<a href="${w.url}">GitHub</a><a href="#${c.name}">${L('Steckbrief', 'Profile')} →</a></div>
+    </article>`;
+  };
+  document.getElementById('six').innerHTML = GROUPS.map(g => `
+    <div class="grp">
+      <div class="grp-head"><h3>${g.title}</h3><span class="pill">${g.names.length} ${L('Wachten', 'integrations')} · ${g.note}</span><p>${g.sub}</p></div>
+      <div class="grp-cards g${g.names.length}">${g.names.map(n => card(C[n])).join('')}</div>
+    </div>`).join('');
+  document.querySelectorAll('.w').forEach(card => card.addEventListener('pointermove', e => {
+    const r = card.getBoundingClientRect();
+    card.style.setProperty('--mx', `${e.clientX - r.left}px`); card.style.setProperty('--my', `${e.clientY - r.top}px`);
+  }));
+
+  /* ---------- Gleisplan ---------- */
+  const SOURCES = [
+    { g: L('AUS DEM EIGENEN HAUS', 'FROM YOUR OWN HOME') },
+    { t: L('Wärmepumpe', 'Heat pump'), s: L('EMS-ESP, HomeCom und weitere', 'EMS-ESP, HomeCom and more'), to: [['waermewacht', 0]] },
+    { t: L('Bezugszähler', 'Grid meter'), s: L('Strom, den das Haus bezieht', 'Electricity the house draws'), to: [['tarifwacht', 0]] },
+    { t: L('Preissensor', 'Price sensor'), s: L('Day-Ahead-Preise, z. B. EPEX Spot', 'Day-ahead prices, e.g. EPEX Spot'), to: [['tarifwacht', 0], ['einspeisewacht', 0]] },
+    { t: L('Batteriespeicher', 'Home battery'), s: L('Zähler und Ladezustand', 'Meters and state of charge'), to: [['speicherwacht', 0]] },
+    { t: L('Einspeisezähler', 'Feed-in meter'), s: L('Strom, den die PV-Anlage abgibt', 'Electricity the PV system exports'), to: [['einspeisewacht', 0]] },
+    { g: L('AUS DEM INTERNET', 'FROM THE INTERNET') },
+    { t: L('Autobahn GmbH + 22 weitere', 'Autobahn GmbH + 22 more'), s: L('Länder, Städte, Luxemburg', 'German states, cities, Luxembourg'), to: [['streckenwacht', 0]] },
+    { t: 'SMARD.de', s: L('Börsenstrompreise der Bundesnetzagentur', 'Exchange prices, Bundesnetzagentur'), to: [['tarifwacht', 1], ['einspeisewacht', 1]] },
+    { t: L('Nachrichten-API', 'News API'), s: L('Eilmeldungen und Regionales', 'Breaking and regional news'), to: [['eilwacht', 0]] }
+  ];
+  const OUTPUTS = [
+    { t: L('Ereignisse', 'Events'), s: L('Auslöser für Push und Ansagen', 'Triggers for push and announcements'), by: ['streckenwacht', 'eilwacht'] },
+    { t: L('Ja/Nein-Sensoren', 'Yes/no sensors'), s: L('„Störung aktiv“, „Vergütung aktiv“ …', '“disruption active”, “paid” …'), by: ['streckenwacht', 'eilwacht', 'einspeisewacht', 'waermewacht', 'speicherwacht'] },
+    { t: L('Messwerte und Kosten', 'Readings and costs'), s: L('mit Langzeitstatistik', 'with long-term statistics'), by: ORDER },
+    { t: L('Kalender', 'Calendars'), s: L('Baustellen, negative Preise', 'Roadworks, negative prices'), by: ['streckenwacht', 'einspeisewacht'] },
+    { t: L('Karte im Dashboard', 'Dashboard map'), s: L('alle Meldungen als Punkte', 'all events as points'), by: ['streckenwacht'] },
+    { t: L('Berichte auf Abruf', 'Reports on demand'), s: L('für jeden Zeitraum', 'for any period'), by: ['einspeisewacht', 'tarifwacht', 'waermewacht', 'speicherwacht'] },
+    { t: L('Gesundheits-Check', 'Health check'), s: L('Befunde mit Begründung', 'Findings with reasons'), by: ['waermewacht', 'speicherwacht'] },
+    { t: L('Reparaturhinweise', 'Repair issues'), s: L('wenn eine Quelle ausfällt', 'when a source fails'), by: ORDER }
+  ];
+  const MAP_ORDER = ORDER;
+  const svg = document.getElementById('map');
+  let focusK = null;
+  (() => {
+    const S = { x: 10, w: 250 }, M = { x: 385, w: 230 }, R = { x: 740, w: 250 };
+    const tileH = 78, tileGap = 14, tileY = {}, groupY = [];
+    let ty0 = 72;
+    GROUPS.forEach(gr => { groupY.push([gr.title.toUpperCase(), ty0 + 12]); ty0 += 24; gr.names.forEach(n => { tileY[n] = ty0; ty0 += tileH + tileGap; }); ty0 += 10; });
+    let links = '', boxes = '', tiles = '', outs = '';
+    let y = 40;
+    SOURCES.forEach(src => {
+      if (src.g) { y += y > 40 ? 24 : 0; boxes += `<text class="m-group" x="${S.x}" y="${y}">${src.g}</text>`; y += 14; return; }
+      const h = 52, by = y;
+      boxes += `<g class="m-item" data-k="${src.to.map(t => t[0]).join(' ')}"><rect class="m-box" x="${S.x}" y="${by}" width="${S.w}" height="${h}" rx="9"/>` +
+        `<text class="m-title" x="${S.x + 14}" y="${by + 22}">${src.t}</text><text class="m-sub" x="${S.x + 14}" y="${by + 40}">${src.s}</text></g>`;
+      src.to.forEach(([n, opt], j) => {
+        const x1 = S.x + S.w, y1 = by + h / 2 + (src.to.length > 1 ? (j - 0.5) * 10 : 0);
+        const shared = n === 'einspeisewacht' || n === 'tarifwacht';
+        const x2 = M.x, y2 = tileY[n] + tileH / 2 + (shared ? (opt ? 14 : -6) : 0), mx = (x1 + x2) / 2;
+        links += `<path class="m-link${opt ? ' opt' : ''}" data-k="${n}" data-opt="${opt}" stroke="var(--${C[n].k})" d="M${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}"/>`;
+      });
+      y += h + 10;
+    });
+    const last = MAP_ORDER[MAP_ORDER.length - 1];
+    const haTop = 40, haBot = tileY[last] + tileH + 18;
+    boxes += `<rect class="m-ha" x="${M.x - 22}" y="${haTop - 4}" width="${M.w + 44}" height="${haBot - haTop + 4}" rx="16"/>` +
+      `<text class="m-ha-label" x="${M.x + M.w / 2}" y="${haTop + 22}" text-anchor="middle">HOME ASSISTANT</text>` +
+      groupY.map(([t, gy]) => `<text class="m-group" x="${M.x}" y="${gy}">${t}</text>`).join('');
+    MAP_ORDER.forEach(n => {
+      const c = C[n], ty = tileY[n];
+      let l1 = '', l2 = '';
+      c.short.split(' ').forEach(wd => { if (!l2 && (l1 + ' ' + wd).trim().length <= 24) l1 = (l1 + ' ' + wd).trim(); else l2 = (l2 + ' ' + wd).trim(); });
+      tiles += `<g class="m-tile m-item" data-k="${n}" tabindex="0" role="link" aria-label="${c.title}: ${L('Steckbrief öffnen', 'open profile')}">` +
+        `<rect class="bg" x="${M.x}" y="${ty}" width="${M.w}" height="${tileH}" rx="12" stroke="var(--${c.k})" stroke-width="1.3"/>` +
+        `<image href="icons/${n}.svg" x="${M.x + 12}" y="${ty + 14}" width="52" height="52"/>` +
+        `<text class="m-title" x="${M.x + 76}" y="${ty + 32}" style="font-family:var(--font-display);font-size:15.5px">${c.title}</text>` +
+        `<text class="m-sub" x="${M.x + 76}" y="${ty + 51}">${l1}</text>` + (l2 ? `<text class="m-sub" x="${M.x + 76}" y="${ty + 66}">${l2}</text>` : '') + `</g>`;
+      links += `<path class="m-link" data-k="${n}" data-opt="0" data-stub="1" stroke="var(--${c.k})" d="M${M.x + M.w} ${ty + tileH / 2} L ${M.x + M.w + 22} ${ty + tileH / 2}"/>`;
+    });
+    let oy = 40;
+    outs += `<text class="m-group" x="${R.x}" y="${oy}">${L('WAS IN HA ENTSTEHT', 'WHAT APPEARS IN HA')}</text>`; oy += 14;
+    OUTPUTS.forEach(o => {
+      outs += `<g class="m-item" data-k="${o.by.join(' ')}"><rect class="m-box" x="${R.x}" y="${oy}" width="${R.w}" height="62" rx="9"/>` +
+        `<text class="m-title" x="${R.x + 14}" y="${oy + 24}">${o.t}</text><text class="m-sub" x="${R.x + 14}" y="${oy + 44}">${o.s}</text></g>`;
+      MAP_ORDER.forEach((n, j) => { if (o.by.includes(n)) outs += `<circle class="m-dot" data-k="${n}" cx="${R.x + R.w - 86 + j * 14}" cy="${oy + 19}" r="4.5" fill="var(--${C[n].k})"/>`; });
+      oy += 72;
+    });
+    const busX = M.x + M.w + 22, midY = (tileY[MAP_ORDER[2]] + tileY[MAP_ORDER[3]]) / 2 + tileH / 2;
+    outs += `<line x1="${busX}" y1="${tileY[MAP_ORDER[0]] + tileH / 2}" x2="${busX}" y2="${tileY[last] + tileH / 2}" stroke="var(--line-2)" stroke-width="1.6"/>`;
+    outs += `<path id="bus-out" d="M${busX} ${midY} L ${R.x - 14} ${midY}" stroke="var(--line-2)" stroke-width="1.6" fill="none"/>`;
+    outs += `<path d="M${R.x - 22} ${midY - 6} L ${R.x - 13} ${midY} L ${R.x - 22} ${midY + 6}" stroke="var(--muted)" stroke-width="1.6" fill="none"/>`;
+    svg.innerHTML = links + boxes + outs + tiles + '<g id="packets"></g>';
+
+    const focus = n => {
+      focusK = n;
+      svg.classList.toggle('dim', !!n);
+      svg.querySelectorAll('[data-k]').forEach(el => el.classList.toggle('on', !!n && el.dataset.k.split(' ').includes(n)));
+    };
+    svg.querySelectorAll('.m-tile').forEach(t => {
+      const n = t.dataset.k;
+      t.addEventListener('mouseenter', () => focus(n)); t.addEventListener('mouseleave', () => focus(null));
+      t.addEventListener('focus', () => focus(n)); t.addEventListener('blur', () => focus(null));
+      t.addEventListener('click', () => { location.hash = n; });
+      t.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); location.hash = n; } });
+    });
+  })();
+  // Datenpakete entlang der Wege
+  const NS = 'http://www.w3.org/2000/svg';
+  const pkLayer = svg.querySelector('#packets');
+  const routes = [...svg.querySelectorAll('.m-link:not([data-stub])')].map(p => ({
+    p, len: p.getTotalLength(), k: p.dataset.k, opt: p.dataset.opt === '1', color: p.getAttribute('stroke'), packets: [], next: Math.random() * 120
+  }));
+  let mapVisible = false;
+  function mapTick() {
+    routes.forEach(r => {
+      r.next -= 1;
+      if (r.next <= 0) {
+        const dot = document.createElementNS(NS, 'circle');
+        dot.setAttribute('r', '2.6'); dot.setAttribute('fill', r.color); dot.setAttribute('class', 'm-pk'); dot.dataset.k = r.k;
+        if (focusK === r.k) dot.classList.add('on');
+        pkLayer.appendChild(dot); r.packets.push({ d: 0, el: dot });
+        r.next = r.opt ? rnd(260, 420) : rnd(70, 150);
+      }
+      r.packets = r.packets.filter(pk => {
+        pk.d += 2.2;
+        if (pk.d >= r.len) { pk.el.remove(); return false; }
+        const pt = r.p.getPointAtLength(pk.d);
+        pk.el.setAttribute('cx', pt.x.toFixed(1)); pk.el.setAttribute('cy', pt.y.toFixed(1));
+        pk.el.setAttribute('opacity', Math.min(1, Math.min(pk.d, r.len - pk.d) / 30).toFixed(2));
+        return true;
+      });
+    });
+  }
+  new IntersectionObserver(es => { mapVisible = es[0].isIntersecting; }).observe(svg);
+
+  /* ---------- Steckbrief ---------- */
+  const IOT = { cloud_polling: L('fragt Dienste im Internet ab', 'polls services on the internet'), calculated: L('rechnet nur lokal', 'calculates locally only'), local_polling: L('liest lokal', 'reads locally') };
+  const tabs = document.getElementById('tabs'), panel = document.getElementById('panel');
+  const newGroup = i => i > 0 && groupOf(CONTENT[i].name) !== groupOf(CONTENT[i - 1].name);
+  tabs.innerHTML = CONTENT.map((c, i) => (newGroup(i) ? '<span class="seg-div" aria-hidden="true"></span>' : '') + `<button class="tab" role="tab" id="tab-${c.name}" aria-selected="false" aria-controls="panel" style="--c:var(--${c.k})" data-name="${c.name}">${icon(c.name, 24)}${c.title}</button>`).join('');
+  let view = 'facts';
+  const j = v => typeof v === 'string' ? `<span class="ts">"${v}"</span>` : typeof v === 'boolean' ? `<span class="tw">${v}</span>` : `<span class="tn">${v}</span>`;
+  const jArr = a => a.length ? `[${a.map(j).join(', ')}]` : '[]';
+  function manifest(w) {
+    const rows = [['domain', j(w.domain || '')], ['version', j(w.manifest_version || '')], ['codeowners', jArr(w.codeowners || [])], ['config_flow', j(!!w.config_flow)],
+      ['dependencies', jArr(w.dependencies || [])], ['after_dependencies', jArr(w.after_dependencies || [])], ['integration_type', j(w.integration_type || '')],
+      ['iot_class', j(w.iot_class || '')], ['requirements', jArr(w.requirements || [])]];
+    return `{\n${rows.map(([k, v], i) => `  <span class="tk">"${k}"</span>: ${v}${i < rows.length - 1 ? ',' : ''}`).join('\n')}\n}`;
+  }
+  function render(name) {
+    const c = C[name] || CONTENT[0], w = W(c.name);
+    tabs.querySelectorAll('.tab').forEach(b => { const on = b.dataset.name === c.name; b.setAttribute('aria-selected', String(on)); b.tabIndex = on ? 0 : -1; });
+    panel.setAttribute('aria-labelledby', 'tab-' + c.name);
+    const docs = (w.docs || []).filter(d => d !== 'BRAND.md');
+    const tests = w.test_functions ? L(`${de(w.test_functions)} in ${w.test_files} Dateien, ${w.ha_test_files} davon gegen HA`, `${de(w.test_functions)} in ${w.test_files} files, ${w.ha_test_files} of them against HA`) : '–';
+    const code = w.python_lines ? L(`${de(w.python_lines)} Zeilen Python in ${w.python_modules} Modulen`, `${de(w.python_lines)} lines of Python in ${w.python_modules} modules`) + (w.frontend_lines ? `, ${de(w.frontend_lines)} ${L('Zeilen JS', 'lines of JS')}` : '') : '–';
+    const facts = `<dl class="kv">
+        <dt>Version</dt><dd class="mono">${w.version || '–'} <span class="muted">· ${date(w.released)}</span></dd>
+        <dt>${L('Seit', 'Since')}</dt><dd>${date(w.created)} · ${w.releases ?? '–'} Releases</dd>
+        <dt>${L('Plattformen', 'Platforms')}</dt><dd>${(w.platforms || []).map(p => `<code>${p}</code>`).join(' ')}</dd>
+        <dt>${L('Aktionen', 'Actions')}</dt><dd class="mono">${w.services ?? '–'}</dd>
+        <dt>${L('Abfrage', 'Data access')}</dt><dd>${IOT[w.iot_class] || w.iot_class || '–'}</dd>
+        <dt>Code</dt><dd>${code}</dd>
+        <dt>Tests</dt><dd>${tests}</dd>
+        <dt>CI</dt><dd>${(w.ci_jobs || []).map(x => `<code>${x}</code>`).join(' ')}</dd>
+        <dt>Home Assistant</dt><dd>${L('ab', 'from')} ${(w.min_ha || '–').replace(/\.0$/, '')}</dd>
+      </dl>`;
+    const man = `<div class="codewin"><div class="ch">custom_components/${w.domain || c.name}/manifest.json <span class="td">· ${L('Auszug', 'excerpt')}</span></div><pre>${manifest(w)}</pre></div>`;
+    panel.innerHTML = `
+      <article class="card" style="--c:var(--${c.k});--tilec:var(--tile-${c.k})">
+        <div class="card-head">${icon(c.name, 72)}
+          <div><div class="tag">${c.tagline}</div><h3>${c.title}</h3><p class="q">${c.q}</p></div>
+          <button class="copy" type="button" data-copy="${w.url || ''}" title="${L('Repository-Adresse für HACS kopieren', 'Copy repository address for HACS')}">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="5" y="5" width="9" height="9" rx="2"/><path d="M11 5V3.5A1.5 1.5 0 009.5 2h-6A1.5 1.5 0 002 3.5v6A1.5 1.5 0 003.5 11H5"/></svg>${(w.repo || '').replace('/integration', '')}/integration</button>
+        </div>
+        <div class="card-body">
+          <div style="display:flex;flex-direction:column;gap:14px"><div class="label">${L('So arbeitet sie', 'How it works')}</div>
+            <ol class="flow">${c.flow.map(([t, d]) => `<li><b>${t}</b><span>${d}</span></li>`).join('')}</ol></div>
+          <div class="split">
+            <div style="display:flex;flex-direction:column;gap:14px;min-width:0"><div class="label">${L('Unter der Haube', 'Under the hood')}</div>
+              <ul class="hood">${c.hood.map(([t, d]) => `<li><b>${t}</b><span>${d}</span></li>`).join('')}</ul></div>
+            <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div class="label">${L('Kennzahlen', 'Key figures')}</div>
+                <div class="view-switch" role="group" aria-label="${L('Ansicht', 'View')}"><button type="button" data-view="facts" aria-pressed="${view === 'facts'}">${L('Übersicht', 'Overview')}</button><button type="button" data-view="manifest" aria-pressed="${view === 'manifest'}">manifest.json</button></div></div>
+              <div id="view-body">${view === 'facts' ? facts : man}</div>
+            </div>
+          </div>
+          <p class="not"><span class="beacon"></span><span>${c.not}</span></p>
+          <div class="card-links">
+            ${w.pages ? `<a class="demo" href="${w.pages}?lang=${LANG}">Demo ↗</a>` : ''}
+            <a href="${w.url}">Repository</a>
+            ${docs.map(d => `<a href="${w.url}/blob/main/docs/${d}">${d}</a>`).join('')}
+            <a href="${w.url}/blob/main/CHANGELOG.md">CHANGELOG.md</a>
+            <a href="${w.url}/blob/main/CLAUDE.md">CLAUDE.md</a>
+          </div>
+        </div>
+      </article>`;
+    panel.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => { view = b.dataset.view; render(c.name); }));
+  }
+  tabs.addEventListener('click', e => { const b = e.target.closest('.tab'); if (b) location.hash = b.dataset.name; });
+  tabs.addEventListener('keydown', e => {
+    if (!['ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+    const list = [...tabs.querySelectorAll('.tab')], i = list.indexOf(document.activeElement); if (i < 0) return;
+    const next = list[(i + (e.key === 'ArrowRight' ? 1 : list.length - 1)) % list.length]; next.focus(); location.hash = next.dataset.name;
+  });
+  const fromHash = scroll => {
+    const h = location.hash.slice(1), isWacht = !!C[h];
+    render(isWacht ? h : CONTENT[0].name);
+    if (isWacht && scroll) document.getElementById('steckbrief').scrollIntoView({ behavior: reduced.matches ? 'auto' : 'smooth' });
+  };
+  window.addEventListener('hashchange', () => fromHash(true));
+  fromHash(!!C[location.hash.slice(1)]);
+
+  /* Kopieren */
+  const toast = msg => { const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 1800); };
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-copy]'); if (!b) return;
+    const text = b.dataset.copy;
+    const done = () => toast(L('Adresse kopiert', 'Address copied'));
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, () => toast(text));
+    else toast(text);
+  });
+
+  /* ---------- Verwandtschaft ---------- */
+  const pair = (a, b) => `<div class="pair">${icon(a, 26)}${C[a].title}<span class="arrow">──▶</span>${icon(b, 26)}${C[b].title}</div>`;
+  document.getElementById('kin').innerHTML = `
+    <div class="panel"><div class="label">${L('Verwandter Code', 'Related code')}</div>${pair('einspeisewacht', 'tarifwacht')}
+      <p>${L('Der Buchungskern wurde kopiert: Zeitraster, Preise, Zähler, SMARD-Abruf. Zur Laufzeit hängen beide nicht voneinander ab. Ein Fehler im einen Kern wird im anderen mitgeprüft.',
+        'The booking core was copied: time grid, prices, meters, SMARD fetch. At runtime neither depends on the other. A bug found in one core is checked in the other too.')}</p></div>
+    <div class="panel"><div class="label">${L('Verwandter Code', 'Related code')}</div>${pair('waermewacht', 'speicherwacht')}
+      <p>${L('Der Zählerbaustein wurde kopiert: Er erkennt Rücksprünge, Resets und Ausreißer in Energiezählern. Dazu kommen Vorlagen als Daten und die Erkennung über die Registry.',
+        'The meter module was copied: it detects drops, resets and outliers in energy meters. Plus templates as data and detection via the registry.')}</p></div>
+    <div class="panel"><div class="label">${L('Vorbild', 'Model')}</div><div class="pair">${icon('streckenwacht', 26)}Streckenwacht<span class="arrow">──▶</span>${L('alle', 'all')}</div>
+      <p>${L('Ordneraufbau, <code>docs/ENTWICKLUNG.md</code>, Changelog, Release-Ablauf, Quellen-Check und Demo wurden hier zuerst gebaut und dann übernommen.',
+        'Folder structure, <code>docs/ENTWICKLUNG.md</code>, changelog, release process, source check and demo were built here first and then adopted.')}</p></div>`;
+
+  /* ---------- Werkstatt ---------- */
+  const total = sum('commits'), assisted = sum('commits_with_claude');
+  if (total) {
+    const share = Math.round(assisted / total * 1000) / 10;
+    document.getElementById('ratio-num').textContent = `${de(assisted)} ${L('von', 'of')} ${de(total)}`;
+    document.getElementById('ratio-text').textContent = `${L('Commits auf main mit Claude als Co-Autor', 'commits on main with Claude as co-author')} (${share.toLocaleString(LOCALE)} %)`;
+    document.getElementById('ratio-bar').style.width = `${share}%`;
+  }
+  document.getElementById('agents').innerHTML = DATA.wachten.filter(w => w.agent_rules).map(w => `<a href="${w.url}/blob/main/CLAUDE.md">${w.name}/CLAUDE.md</a>`).join('');
+
+  /* ---------- Lebensweg ---------- */
+  const latest = [...DATA.wachten].filter(w => w.released).sort((a, b) => a.released < b.released ? 1 : -1)[0] || {};
+  const jobs = [...new Set(DATA.wachten.flatMap(w => w.ci_jobs || []))];
+  document.getElementById('term-title').textContent = `${latest.name || 'wacht'} · release v${latest.version || ''}`;
+  const TERM = [
+    ['p', '$ ', 'c', 'git push origin dev'],
+    ['d', L('  CI startet für genau diesen Commit …', '  CI runs for exactly this commit …')],
+    ['ok', '  ✓ ', 'c', jobs.join('  ✓ ')],
+    ['p', '$ ', 'c', 'git push origin dev:main'],
+    ['ok', '  ✓ ', 'd', L('Ruleset: CI grün, Fast-forward, kein Merge-Commit', 'Ruleset: CI green, fast-forward, no merge commit')],
+    ['p', '$ ', 'c', `gh release create v${latest.version || 'x.y.z'} --target main --latest`],
+    ['ok', '  ✓ ', 'd', `release-asset: ${latest.name || 'wacht'}.zip ${L('angehängt', 'attached')}`],
+    ['ok', '  ✓ ', 'd', `HACS: ${L('erstes Release in der Liste ist', 'first release in the list is')} v${latest.version || 'x.y.z'}`],
+    ['h', '  → ', 'd', L('Home Assistant zeigt das Update an', 'Home Assistant shows the update')]
+  ];
+  const termEl = document.getElementById('term');
+  const lineHtml = parts => { let s = ''; for (let i = 0; i < parts.length; i += 2) s += `<span class="${parts[i]}">${parts[i + 1].replace(/</g, '&lt;')}</span>`; return s; };
+  const termFull = () => { termEl.innerHTML = TERM.map(lineHtml).join('\n') + '\n<span class="p">$ </span><span class="cur"></span>'; };
+  termFull();
+  let playing = null;
+  document.getElementById('term-play').addEventListener('click', () => {
+    if (reduced.matches) return termFull();
+    clearTimeout(playing);
+    let li = 0, ci = 0;
+    const plain = TERM.map(parts => parts.filter((_, i) => i % 2).join(''));
+    const step = () => {
+      if (li >= TERM.length) return termFull();
+      const done = TERM.slice(0, li).map(lineHtml).join('\n');
+      const isCmd = TERM[li][0] === 'p';
+      ci = isCmd ? ci + 1 : plain[li].length;
+      // Zeile bis ci zeichnen, Teile der Reihe nach
+      let left = ci, cur = '';
+      for (let i = 0; i < TERM[li].length; i += 2) { const t = TERM[li][i + 1]; const take = t.slice(0, Math.max(0, left)); left -= t.length; cur += `<span class="${TERM[li][i]}">${take.replace(/</g, '&lt;')}</span>`; }
+      termEl.innerHTML = (done ? done + '\n' : '') + cur + '<span class="cur"></span>';
+      if (ci >= plain[li].length) { li++; ci = 0; playing = setTimeout(step, isCmd ? 380 : 260); }
+      else playing = setTimeout(step, 22 + Math.random() * 30);
+    };
+    step();
+  });
+  document.getElementById('steps').innerHTML = [
+    [L('Entwickeln', 'Develop'), L('Im Zweig <code>dev</code>. Kern-Tests und <code>ruff</code> lokal', 'On the <code>dev</code> branch. Core tests and <code>ruff</code> locally')],
+    [L('Prüfen', 'Check'), `${L('CI bei jedem Push', 'CI on every push')}: ${jobs.map(x => `<code>${x}</code>`).join(' ')}`],
+    [L('Freigeben', 'Approve'), L('Ein Ruleset lässt nur grüne Stände auf <code>main</code>', 'A ruleset only lets green states onto <code>main</code>')],
+    ['Release', L('Tag <code>vX.Y.Z</code>, ein Workflow hängt die ZIP an. Tags sind unveränderlich', 'Tag <code>vX.Y.Z</code>, a workflow attaches the ZIP. Tags are immutable')],
+    ['HACS', L('Liest das neueste Release und zeigt das Update an', 'Reads the latest release and shows the update')],
+    ['Home Assistant', L('Herunterladen, neu starten, fertig', 'Download, restart, done')]
+  ].map(([b, s], i) => `<div class="st"><i>${String(i + 1).padStart(2, '0')}</i><div><b>${b}</b><span>${s}</span></div></div>`).join('');
+  const withCheck = DATA.wachten.filter(w => (w.workflows || []).includes('source-check')).map(w => C[w.name] && C[w.name].title).filter(Boolean);
+  const withPages = DATA.wachten.filter(w => w.pages).length;
+  document.getElementById('side3').innerHTML = `
+    <div class="panel"><div class="label">${L('Jede Woche', 'Every week')}</div><h3>${L('Quellen-Check', 'Source check')}</h3><p>${L(
+      `${withCheck.length} der ${DATA.wachten.length} holen Daten aus dem Netz (${withCheck.join(', ')}). Ein Workflow fragt jede Quelle ab und prüft das Format. Baut ein Dienst etwas um, fällt es auf, bevor Nutzer es merken.`,
+      `${withCheck.length} of ${DATA.wachten.length} fetch data from the web (${withCheck.join(', ')}). A workflow queries each source and checks the format. If a service changes something, it shows up before users notice.`)}</p></div>
+    <div class="panel"><div class="label">GitHub Pages</div><h3>${L('Demos mit erfundenen Daten', 'Demos with invented data')}</h3><p>${L(
+      `${withPages} von ${DATA.wachten.length} online. <code>tools/make_demo.py</code> rechnet erfundene Daten mit dem Code der Integration, die Seite bildet die HA-Oberfläche nach.`,
+      `${withPages} of ${DATA.wachten.length} online. <code>tools/make_demo.py</code> runs invented data through the integration’s code; the page mimics the HA interface.`)}</p></div>
+    <div class="panel"><div class="label">${L('Kompatibilität', 'Compatibility')}</div><h3>${L('Ältere HA-Versionen', 'Older HA versions')}</h3><p>${L(
+      'Der Job <code>compat</code> lässt die HA-Tests auch gegen die älteste unterstützte Version laufen. Neue HA-APIs werden abgesichert, statt die Mindestversion anzuheben.',
+      'The <code>compat</code> job also runs the HA tests against the oldest supported version. New HA APIs are guarded instead of raising the minimum version.')}</p></div>`;
+
+  /* ---------- Zahlen ---------- */
+  const maxPy = Math.max(1, ...DATA.wachten.map(w => w.python_lines || 0)), maxT = Math.max(1, ...DATA.wachten.map(w => w.test_functions || 0));
+  const hacsCell = w => w.hacs && w.hacs.state === 'default' ? `<span class="pill in">${L('Standardliste', 'default list')}</span>`
+    : w.hacs && w.hacs.state === 'pending' ? `<a class="pill wait" href="${w.hacs.url}">${L('Antrag', 'request')} #${w.hacs.pr}</a>` : `<span class="pill">${L('eigenes Repo', 'custom repository')}</span>`;
+  const bar = (v, max, k) => `<div class="barcell" style="--c:var(--${k})"><i style="--v:${(v / max * 100).toFixed(1)}%"></i><span class="mono">${de(v)}</span></div>`;
+  document.getElementById('table').innerHTML = `
+    <thead><tr><th>Integration</th><th class="r">Version</th><th class="r">${L('vom', 'released')}</th><th class="r">Releases</th><th class="r">Commits</th><th>${L('Python-Zeilen', 'Python lines')}</th><th>${L('Testfunktionen', 'Test functions')}</th><th class="r">${L('HA ab', 'HA from')}</th><th>HACS</th></tr></thead>
+    <tbody>${CONTENT.map((c, i) => { const w = W(c.name); return (i === 0 || newGroup(i) ? `<tr class="grp-row"><td colspan="9">${groupOf(c.name).title}</td></tr>` : '') + `<tr>
+      <td><a class="tn-name" href="${w.url}">${icon(c.name, 22)}${c.title}</a></td>
+      <td class="r">${w.version || '–'}</td><td class="r">${date(w.released)}</td><td class="r">${w.releases ?? '–'}</td><td class="r">${de(w.commits || 0)}</td>
+      <td>${bar(w.python_lines || 0, maxPy, c.k)}</td><td>${bar(w.test_functions || 0, maxT, c.k)}</td>
+      <td class="r">${(w.min_ha || '–').replace(/\.0$/, '')}</td><td>${hacsCell(w)}</td></tr>`; }).join('')}</tbody>
+    <tfoot><tr><td>${L('Zusammen', 'Total')}</td><td></td><td></td><td class="r">${de(sum('releases'))}</td><td class="r">${de(sum('commits'))}</td><td class="mono">${de(sum('python_lines'))}</td><td class="mono">${de(sum('test_functions'))}</td><td></td><td></td></tr></tfoot>`;
+  document.getElementById('zahlen-stand').textContent = L(`Stand ${genText}, automatisch aus GitHub: Releases, Commits, Code und Tests auf main. Parametrisierte Tests zählen einmal.`,
+    `As of ${genText}, automatically from GitHub: releases, commits, code and tests on main. Parametrised tests count once.`);
+  document.getElementById('stand').textContent = `data.js · ${DATA.generated || '–'} · tools/build_data.py`;
+
+  /* ---------- Mitarbeit ---------- */
+  // Reihenfolge und PR-Zahlen kommen aus data.js (contributions), Name und Beschreibung von hier
+  const TIES = {
+    'serbanb11/bosch-homecom-hass': ['Bosch HomeCom', L('Bosch-Wärmepumpen über die Bosch-Cloud in HA. Eine der beiden erprobten Quellen der Wärmewacht.', 'Bosch heat pumps in HA via the Bosch cloud. One of Wärmewacht’s two tested sources.')],
+    'serbanb11/homecom_alt': ['homecom_alt', L('Die Python-Bibliothek dahinter.', 'The Python library behind it.')],
+    'hackwell/homeassistant-anio': ['ANIO Smartwatch', L('Kinder-Smartwatches in HA.', 'Children’s smartwatches in HA.')],
+    'mampfes/hacs_waste_collection_schedule': ['Waste Collection Schedule', L('Abfuhrtermine vieler Entsorger als Kalender.', 'Waste collection dates from many providers as calendars.')],
+    'chemelli74/aioamazondevices': ['aioamazondevices', L('Bibliothek hinter der Core-Integration „Alexa Devices“.', 'Library behind the core integration “Alexa Devices”.')],
+    'volter-labs/volcast-ha-integration': ['Volcast', L('PV-Prognose für HA.', 'PV forecast for HA.')],
+    'tronity/homeassistant': ['TRONITY', L('Daten von Elektroautos über TRONITY.', 'Electric car data via TRONITY.')],
+    'AshGSmith/solar-forecast-card': ['Solar Forecast Card', L('Lovelace-Karte für PV-Prognosen.', 'Lovelace card for PV forecasts.')],
+    'Ralleberg/ha-hrv-card': ['HRV Card', L('Lovelace-Karte für Lüftungsanlagen.', 'Lovelace card for ventilation units.')],
+    'Sturmi77/heatpump-hydraulic-card': ['Heat Pump Hydraulic Card', L('Lovelace-Karte mit dem Hydraulikschema einer Wärmepumpe.', 'Lovelace card with a heat pump’s hydraulic diagram.')]
+  };
+  const pr = n => `${n} PR${n === 1 ? '' : 's'}`;
+  const prText = ({ prs, merged, open }) => [
+    merged ? `${pr(merged)} ${L('gemergt', 'merged')}` : '',
+    open ? (merged ? `${open} ${L('offen', 'open')}` : `${pr(open)} ${L('offen', 'open')}`) : ''
+  ].filter(Boolean).join(' · ') || pr(prs);
+  document.getElementById('ties').innerHTML = (DATA.contributions || []).filter(x => TIES[x.repo] && x.prs).map(x => {
+    const [n, what] = TIES[x.repo], role = [x.maintainer ? 'Co-Maintainer' : '', prText(x)].filter(Boolean).join(' · ');
+    return `<li><a href="https://github.com/${x.repo}"><b>${n}</b> <span class="repo">${x.repo}</span></a><span class="role">${role}</span><span class="what">${what}</span></li>`;
+  }).join('');
+
+  /* ---------- Befehlspalette ---------- */
+  const cmdk = document.getElementById('cmdk'), input = document.getElementById('cmdk-input'), list = document.getElementById('cmdk-list');
+  const go = id => () => { location.hash = id; };
+  const SECTIONS = [['wachten', L('Die sechs', 'The six')], ['gleisplan', L('Gleisplan', 'Data flow')], ['steckbrief', L('Steckbrief', 'Profile')], ['bauplan', L('Bauplan', 'Blueprint')],
+    ['werkstatt', L('Werkstatt', 'Workshop')], ['lebensweg', L('Lebensweg', 'Release path')], ['zahlen', L('Zahlen', 'Numbers')], ['mitarbeit', L('Mitarbeit', 'Contributions')]];
+  const G = { profile: L('Steckbrief', 'Profile'), section: L('Abschnitt', 'Section'), action: L('Aktion', 'Action') };
+  const ITEMS = [
+    ...CONTENT.map(c => ({ grp: G.profile, label: c.title, hint: c.short, img: c.name, run: go(c.name) })),
+    ...CONTENT.filter(c => W(c.name).pages).map(c => ({ grp: 'Demo', label: `${c.title} Demo`, hint: L('erfundene Daten', 'invented data'), img: c.name, href: `${W(c.name).pages}?lang=${LANG}` })),
+    ...CONTENT.map(c => ({ grp: 'Repository', label: `${c.title} ${L('auf GitHub', 'on GitHub')}`, hint: W(c.name).repo || '', img: c.name, href: W(c.name).url })),
+    ...SECTIONS.map(([id, l], i) => ({ grp: G.section, label: l, hint: String(i + 1).padStart(2, '0'), ico: '#', run: () => document.getElementById(id).scrollIntoView({ behavior: reduced.matches ? 'auto' : 'smooth' }) })),
+    { grp: G.action, label: L('Darstellung wechseln', 'Change theme'), hint: L('System · Hell · Dunkel', 'System · Light · Dark'), ico: '◐', run: nextTheme },
+    { grp: G.action, label: L('Auf Englisch lesen', 'Auf Deutsch lesen'), hint: other.toUpperCase(), ico: '⇄', run: () => { location.href = langHref(); } },
+    { grp: G.action, label: L('Release-Ablauf abspielen', 'Play release process'), hint: 'Terminal', ico: '▶', run: () => { document.getElementById('lebensweg').scrollIntoView({ behavior: reduced.matches ? 'auto' : 'smooth' }); setTimeout(() => document.getElementById('term-play').click(), 500); } }
+  ];
+  let shown = [], sel = 0, lastFocus = null;
+  function renderList() {
+    const q = input.value.trim().toLowerCase();
+    shown = ITEMS.filter(it => !q || (it.label + ' ' + it.hint + ' ' + it.grp).toLowerCase().includes(q));
+    sel = Math.min(sel, Math.max(0, shown.length - 1));
+    let grp = '', html = '';
+    shown.forEach((it, i) => {
+      if (it.grp !== grp) { grp = it.grp; html += `<li class="grp" role="presentation">${grp}</li>`; }
+      html += `<li role="option" id="cmd-${i}" data-i="${i}" aria-selected="${i === sel}">${it.img ? icon(it.img, 20) : `<span class="ico">${it.ico}</span>`}<span>${it.label}</span><small>${it.hint}</small></li>`;
+    });
+    list.innerHTML = html || `<li class="grp" role="presentation">${L('Kein Treffer', 'No results')}</li>`;
+    input.setAttribute('aria-activedescendant', shown.length ? `cmd-${sel}` : '');
+    const cur = list.querySelector('[aria-selected="true"]'); if (cur) cur.scrollIntoView({ block: 'nearest' });
+  }
+  function openCmdk() { lastFocus = document.activeElement; cmdk.hidden = false; input.value = ''; sel = 0; renderList(); input.focus(); }
+  function closeCmdk() { cmdk.hidden = true; if (lastFocus && lastFocus.focus) lastFocus.focus(); }
+  function runSel() {
+    const it = shown[sel]; if (!it) return; closeCmdk();
+    if (it.href) { const a = document.createElement('a'); a.href = it.href; a.target = '_blank'; a.rel = 'noopener'; document.body.appendChild(a); a.click(); a.remove(); }
+    else it.run();
+  }
+  document.getElementById('open-cmdk').addEventListener('click', openCmdk);
+  input.addEventListener('input', () => { sel = 0; renderList(); });
+  input.addEventListener('keydown', e => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); sel = Math.min(shown.length - 1, sel + 1); renderList(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); sel = Math.max(0, sel - 1); renderList(); }
+    else if (e.key === 'Enter') { e.preventDefault(); runSel(); }
+  });
+  list.addEventListener('mousemove', e => { const li = e.target.closest('[data-i]'); if (li && +li.dataset.i !== sel) { sel = +li.dataset.i; renderList(); } });
+  list.addEventListener('click', e => { const li = e.target.closest('[data-i]'); if (li) { sel = +li.dataset.i; runSel(); } });
+  cmdk.addEventListener('click', e => { if (e.target === cmdk) closeCmdk(); });
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); cmdk.hidden ? openCmdk() : closeCmdk(); }
+    else if (e.key === '/' && cmdk.hidden && !/input|textarea/i.test(document.activeElement.tagName)) { e.preventDefault(); openCmdk(); }
+    else if (e.key === 'Escape' && !cmdk.hidden) closeCmdk();
+    else if (e.key === 'Tab' && !cmdk.hidden) { e.preventDefault(); input.focus(); }
+  });
+
+  /* ---------- Takt ---------- */
+  applyTheme(theme);
+  let lastT = 0;
+  function loop(ts) {
+    if (!reduced.matches && !document.hidden && ts - lastT > 32) {
+      lastT = ts;
+      if (monVisible) monTick();
+      if (mapVisible) mapTick();
+    }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
