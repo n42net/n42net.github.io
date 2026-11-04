@@ -893,15 +893,13 @@ footer .mono { font-size: 0.76rem; color: var(--dim); }
     dark: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13.5 9.5A5.5 5.5 0 016.5 2.5a5.5 5.5 0 107 7z"/></svg>'
   };
   const THEME_NAMES = { system: 'System', light: L('Hell', 'Light'), dark: L('Dunkel', 'Dark') };
-  let theme = 'system';
-  try { theme = localStorage.getItem('wacht-theme') || 'system'; } catch (e) {}
+  let theme = 'system'; // gilt nur bis zum Neuladen, gespeichert wird nichts
   const applyTheme = t => {
     theme = t;
     if (t === 'system') document.documentElement.removeAttribute('data-theme');
     else document.documentElement.setAttribute('data-theme', t);
     themeBtn.innerHTML = ICONS[t];
     themeBtn.title = `${L('Darstellung', 'Theme')}: ${THEME_NAMES[t]}`;
-    try { localStorage.setItem('wacht-theme', t); } catch (e) {}
     refreshColors();
   };
   const nextTheme = () => applyTheme({ system: 'light', light: 'dark', dark: 'system' }[theme]);

@@ -17,7 +17,6 @@
     const old = ['top', 'wachten', 'gleisplan', 'steckbrief', 'bauplan', 'werkstatt', 'lebensweg', 'zahlen', 'mitarbeit',
       'waermewacht', 'tarifwacht', 'speicherwacht', 'einspeisewacht', 'streckenwacht', 'eilwacht'];
     if (old.includes(location.hash.slice(1))) location.replace('home-assistant/' + location.search + location.hash);
-    try { const t = localStorage.getItem('wacht-theme'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
   })();
 </script>
 <style>
