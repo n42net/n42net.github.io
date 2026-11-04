@@ -115,7 +115,7 @@
           ['Report for any period', 'The “report” action also calculates backwards from long-term statistics.']
         ],
         not: '<b>Not a bill.</b> The values are a guide. What counts is what the grid operator measures with its meter.',
-        sig: 'Day-ahead price'
+        sig: 'Exchange price, line: 0'
       },
       tarifwacht: {
         tagline: 'Every tariff. Every quarter hour.', short: 'Electricity tariffs compared',
@@ -136,7 +136,7 @@
           ['Core from Einspeisewacht', 'Time grid, prices and meters come from its booking core, copied and independent since.']
         ],
         not: '<b>Same behaviour assumed.</b> Anyone with a dynamic tariff who shifts consumption to cheap hours saves more than the comparison shows.',
-        sig: 'dynamic vs. fixed'
+        sig: 'Exchange price, line: fixed'
       },
       waermewacht: {
         tagline: 'Every kilowatt-hour. Every cycle.', short: 'Health check for heat pumps',
@@ -157,7 +157,7 @@
           ['Gas mode', 'Separate entry type for gas boilers before switching: heating load from gas consumption.']
         ],
         not: '<b>Reads only, never controls.</b> A guide, not a professional diagnosis. The values are only as good as the heat pump’s meters.',
-        sig: 'Compressor, defrost'
+        sig: 'Compressor power'
       },
       speicherwacht: {
         tagline: 'Every charge. Every cycle.', short: 'Health check for home batteries',

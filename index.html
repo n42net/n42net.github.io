@@ -136,7 +136,7 @@ kbd { font-family: var(--font-mono); font-size: 0.7rem; padding: 2px 6px; border
 .mon-head .label { display: flex; align-items: center; gap: 8px; }
 .dots { display: flex; gap: 6px; }
 .dots i { width: 9px; height: 9px; border-radius: 50%; background: var(--line-2); display: block; }
-.mon-row { display: grid; grid-template-columns: 22px 116px minmax(0, 1fr) 96px; align-items: center; gap: 12px; padding: 9px 16px; border-bottom: 1px solid var(--line); }
+.mon-row { display: grid; grid-template-columns: 22px 116px minmax(0, 1fr) 104px; align-items: center; gap: 12px; padding: 9px 16px; border-bottom: 1px solid var(--line); }
 .mon-row:last-of-type { border-bottom: 0; }
 .mon-row img { width: 22px; height: 22px; display: block; }
 .mon-row .nm { font-family: var(--font-display); font-weight: 600; font-size: 0.9rem; }
@@ -391,7 +391,7 @@ footer .mono { font-size: 0.76rem; color: var(--dim); }
   .kpi:nth-child(2n) { border-right: 0 !important; }
   .kpi:nth-child(-n+2) { border-top: 0; }
   .g4, .g2, .grid3, .ties { grid-template-columns: minmax(0, 1fr); }
-  .mon-row { grid-template-columns: 22px 84px minmax(0, 1fr) 78px; gap: 8px; padding: 8px 12px; }
+  .mon-row { grid-template-columns: 22px 84px minmax(0, 1fr) 92px; gap: 8px; padding: 8px 12px; }
   .mon-row .sig { display: none; }
   .layer { grid-template-columns: minmax(0, 1fr); gap: 10px; }
   .card-head { grid-template-columns: 52px minmax(0, 1fr); gap: 14px; padding: 18px; }
@@ -730,7 +730,7 @@ footer .mono { font-size: 0.76rem; color: var(--dim); }
         ['Bericht für jeden Zeitraum', 'Die Aktion „Bericht“ rechnet auch rückwirkend aus der Langzeitstatistik.']
       ],
       not: '<b>Keine Abrechnung.</b> Die Werte sind eine Orientierung. Es gilt, was der Netzbetreiber mit seinem Zähler misst.',
-      sig: 'Day-Ahead-Preis'
+      sig: 'Börsenpreis, Linie: 0'
     },
     {
       name: 'tarifwacht', k: 'tw', title: 'Tarifwacht', tagline: 'Jeder Tarif. Jede Viertelstunde.', short: 'Stromtarife im Vergleich',
@@ -751,7 +751,7 @@ footer .mono { font-size: 0.76rem; color: var(--dim); }
         ['Kern aus der Einspeisewacht', 'Zeitraster, Preise und Zähler stammen aus deren Buchungskern, kopiert und seitdem eigenständig.']
       ],
       not: '<b>Gleiches Verhalten unterstellt.</b> Wer mit dynamischem Tarif Verbrauch in billige Stunden schiebt, spart mehr, als der Vergleich zeigt.',
-      sig: 'dynamisch ggü. Festpreis'
+      sig: 'Börsenpreis, Linie: Festpreis'
     },
     {
       name: 'waermewacht', k: 'ww', title: 'Wärmewacht', tagline: 'Jede Kilowattstunde. Jeder Takt.', short: 'Gesundheits-Check für Wärmepumpen',
@@ -772,7 +772,7 @@ footer .mono { font-size: 0.76rem; color: var(--dim); }
         ['Gas-Modus', 'Eigener Eintragstyp für Gasheizungen vor dem Umstieg: Heizlast aus dem Gasverbrauch.']
       ],
       not: '<b>Liest nur, steuert nie.</b> Eine Orientierung, keine Fachdiagnose. Die Werte sind so gut wie die Zähler der Wärmepumpe.',
-      sig: 'Kompressor, Abtauung'
+      sig: 'Verdichterleistung'
     },
     {
       name: 'speicherwacht', k: 'spw', title: 'Speicherwacht', tagline: 'Jede Ladung. Jeder Zyklus.', short: 'Gesundheits-Check für Batteriespeicher',
@@ -914,19 +914,31 @@ footer .mono { font-size: 0.76rem; color: var(--dim); }
 
   /* ---------- Kanal-Monitor ---------- */
   const rnd = (a, b) => a + Math.random() * (b - a);
+  // Erfundene Signale, ein Wert je Abtastung (rund 7,5 pro Sekunde). Kurve und Wert rechts zeigen dieselbe Größe.
+  // Preise als Viertelstunden-Treppe (Q Abtastungen), ein „Tag“ hat 40 davon.
+  const Q = 8, DAY = 40 * Q;
+  const ct = p => `${p < 0 ? '−' : ''}${dec(Math.abs(p))} ct/kWh`;
+  const bump = (x, mid, width) => Math.exp(-Math.pow((x - mid) / width, 2));
   const GEN = {
     streckenwacht: () => { let n = 2; return () => { if (Math.random() < 0.012) n = Math.max(0, Math.min(5, n + (Math.random() < 0.5 ? -1 : 1))); return { v: n / 5, text: L(`${n} Meldung${n === 1 ? '' : 'en'}`, `${n} event${n === 1 ? '' : 's'}`), step: true }; }; },
-    eilwacht: () => { let a = 0; return () => { if (a < 0.02 && Math.random() < 0.004) a = 1; a *= 0.975; return { v: a, text: a > 0.3 ? L('aktiv', 'active') : L('ruhig', 'quiet'), hot: a > 0.3 }; }; },
-    einspeisewacht: () => { let t = rnd(0, 600); return () => { t += 1; const p = 5 + 9 * Math.cos(2 * Math.PI * t / 520) - 11 * Math.exp(-Math.pow(((t % 520) - 260) / 55, 2)) + 1.2 * Math.sin(t / 7); return { v: (p + 14) / 30, text: `${p >= 0 ? '+' : '−'}${dec(Math.abs(p))} ct`, zero: 14 / 30, hot: p < 0 }; }; },
-    tarifwacht: () => { let t = rnd(0, 400); return () => { t += 1; const d = 28.4 + 8 * Math.sin(2 * Math.PI * t / 380) + 3 * Math.sin(2 * Math.PI * t / 91) + rnd(-0.6, 0.6); const diff = d - 28.4; return { v: (d - 14) / 30, ref: 14.4 / 30, text: `Δ ${diff >= 0 ? '+' : '−'}${dec(Math.abs(diff))} ct` }; }; },
-    waermewacht: () => { let on = true, left = 160, p = 0.6, az = 4.1, defrost = 0; return () => {
-      left -= 1; if (left <= 0) { on = !on; left = on ? rnd(120, 220) : rnd(60, 140); }
-      if (on && defrost <= 0 && Math.random() < 0.003) defrost = 16;
-      const target = !on ? 0.02 : defrost > 0 ? 0.12 : 0.55 + 0.08 * Math.sin(left / 9);
+    eilwacht: () => { let a = 0; return () => { if (a < 0.02 && Math.random() < 0.006) a = 1; a *= 0.97; return { v: a, text: a > 0.3 ? L('aktiv', 'active') : L('ruhig', 'quiet'), hot: a > 0.3 }; }; },
+    einspeisewacht: () => { let t = Math.floor(rnd(0, DAY)), p = null; return () => {
+      if (t++ % Q === 0 || p === null) { const ph = (t % DAY) / DAY; p = 7 + 6 * Math.cos(2 * Math.PI * ph) - 12 * bump(ph, 0.5, 0.09) + rnd(-0.8, 0.8); }
+      return { v: (p + 13) / 28, zero: 13 / 28, text: ct(p), hot: p < 0, step: true }; }; },
+    tarifwacht: () => { let t = Math.floor(rnd(0, DAY)), p = null; return () => {
+      if (t++ % Q === 0 || p === null) { const ph = (t % DAY) / DAY; p = 28 - 7 * bump(ph, 0.5, 0.12) + 9 * bump(ph, 0.8, 0.07) + rnd(-1, 1); }
+      return { v: (p - 18) / 22, ref: (28.4 - 18) / 22, text: ct(p), step: true }; }; },
+    waermewacht: () => { let on = true, left = rnd(60, 120), base = 1.9, p = base, defrost = 0; return () => {
+      if (--left <= 0) { on = !on; left = on ? rnd(90, 170) : rnd(40, 90); base = rnd(1.5, 2.3); }
+      if (on && defrost <= 0 && Math.random() < 0.004) defrost = 12;
+      const target = !on ? 0 : defrost > 0 ? 0.25 : base;
       if (defrost > 0) defrost -= 1;
-      p += (target - p) * 0.12; az += (rnd(3.7, 4.5) - az) * 0.01;
-      return { v: p, text: on ? (defrost > 0 ? L('Abtauen', 'defrost') : `${L('AZ', 'PF')} ${dec(az)}`) : L('aus', 'off') }; }; },
-    speicherwacht: () => { let t = rnd(0, 700), soc = 55; return () => { t += 1; const sun = Math.sin(2 * Math.PI * t / 700); soc += sun > 0.1 ? 0.22 : -0.12; soc = Math.max(8, Math.min(100, soc)); return { v: soc / 100, text: `SoC ${Math.round(soc)} %` }; }; }
+      p += (target - p) * 0.18;
+      const text = on && defrost > 0 ? L('Abtauen', 'defrost') : p < 0.05 ? L('aus', 'off') : `${dec(p)} kW`;
+      return { v: p / 3, text }; }; },
+    speicherwacht: () => { let t = rnd(0, DAY), soc = 55; return () => {
+      const ph = (t++ % DAY) / DAY; soc = Math.max(8, Math.min(100, soc + (ph > 0.3 && ph < 0.7 ? 0.45 : -0.2)));
+      return { v: soc / 100, text: `SoC ${Math.round(soc)} %` }; }; }
   };
   const monitor = document.getElementById('monitor');
   monitor.innerHTML = CONTENT.map(c => `<div class="mon-row" style="--c:var(--${c.k})">${icon(c.name, 22)}<div><span class="nm">${c.title}</span><span class="sig">${c.sig}</span></div><canvas data-n="${c.name}" aria-hidden="true"></canvas><span class="read" data-r="${c.name}">–</span></div>`).join('');
@@ -938,19 +950,19 @@ footer .mono { font-size: 0.76rem; color: var(--dim); }
   }
   refreshColors();
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', refreshColors);
-  const STEP = 2;
+  const STEP = 3, EVERY = 4; // eine Abtastung je 4 Bilder, dazwischen schiebt die Kurve weich weiter
   function sizeCanvases() {
     channels.forEach(ch => {
       const r = ch.canvas.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 2);
       ch.canvas.width = Math.max(1, Math.round(r.width * dpr)); ch.canvas.height = Math.max(1, Math.round(r.height * dpr));
-      ch.w = r.width; ch.h = r.height; ch.dpr = dpr; ch.max = Math.ceil(r.width / STEP) + 2;
+      ch.w = r.width; ch.h = r.height; ch.dpr = dpr; ch.max = Math.ceil(r.width / STEP) + 3;
     });
   }
   function hexA(hex, a) {
     const m = hex.replace('#', ''); if (m.length !== 6) return hex;
     return `rgba(${parseInt(m.slice(0, 2), 16)},${parseInt(m.slice(2, 4), 16)},${parseInt(m.slice(4, 6), 16)},${a})`;
   }
-  function drawChannel(ch) {
+  function drawChannel(ch, frac = 0) {
     const g = ch.canvas.getContext('2d'), { w, h, dpr, buf } = ch;
     g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
     const pad = 4, Y = v => h - pad - Math.max(0, Math.min(1, v)) * (h - 2 * pad);
@@ -958,29 +970,39 @@ footer .mono { font-size: 0.76rem; color: var(--dim); }
     g.lineWidth = 1; g.setLineDash([2, 3]); g.strokeStyle = COLORS.line;
     if (last.zero !== undefined || last.ref !== undefined) { const y = Y(last.zero ?? last.ref); g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke(); }
     g.setLineDash([]);
-    const col = COLORS[ch.c.name] || '#888', x0 = w - (buf.length - 1) * STEP;
+    // jüngster Wert wandert bis zur nächsten Abtastung um frac nach links, rechts davon gilt er weiter
+    const col = COLORS[ch.c.name] || '#888', x0 = w - (buf.length - 1 + frac) * STEP, head = w - 3;
     g.beginPath();
     buf.forEach((s, i) => { const x = x0 + i * STEP, y = Y(s.v); if (i === 0) g.moveTo(x, y); else if (s.step) { g.lineTo(x, Y(buf[i - 1].v)); g.lineTo(x, y); } else g.lineTo(x, y); });
+    if (buf.length) g.lineTo(head, Y(last.v));
     g.lineWidth = 1.6; g.strokeStyle = col; g.stroke();
-    g.lineTo(x0 + (buf.length - 1) * STEP, h); g.lineTo(x0, h); g.closePath();
+    g.lineTo(head, h); g.lineTo(x0, h); g.closePath();
     const grad = g.createLinearGradient(0, 0, 0, h); grad.addColorStop(0, hexA(col, 0.22)); grad.addColorStop(1, hexA(col, 0));
     g.fillStyle = grad; g.fill();
     if (last.zero !== undefined) { // negative Preise in Amber hervorheben
       g.fillStyle = hexA(COLORS.amber, 0.28);
-      buf.forEach((s, i) => { if (s.v < s.zero) { const x = x0 + i * STEP; g.fillRect(x - STEP / 2, Y(s.zero), STEP, Y(s.v) - Y(s.zero)); } });
+      buf.forEach((s, i) => { if (s.v < s.zero) { const x = x0 + i * STEP, wd = i === buf.length - 1 ? head - x : STEP; g.fillRect(x, Y(s.zero), wd, Y(s.v) - Y(s.zero)); } });
     }
-    if (buf.length) { const x = x0 + (buf.length - 1) * STEP, y = Y(last.v); g.fillStyle = col; g.beginPath(); g.arc(x - 1, y, 2.6, 0, Math.PI * 2); g.fill(); g.fillStyle = hexA(col, 0.25); g.beginPath(); g.arc(x - 1, y, 6, 0, Math.PI * 2); g.fill(); }
+    if (buf.length) { const y = Y(last.v); g.fillStyle = col; g.beginPath(); g.arc(head, y, 2.6, 0, Math.PI * 2); g.fill(); g.fillStyle = hexA(col, 0.25); g.beginPath(); g.arc(head, y, 6, 0, Math.PI * 2); g.fill(); }
   }
   sizeCanvases();
   channels.forEach(ch => { for (let i = 0; i < ch.max; i++) ch.buf.push(ch.gen()); });
-  let monVisible = true, clock = 0, frame = 0;
+  let monVisible = true, clock = 0, frame = 0, sub = 0;
   function monTick() {
-    channels.forEach(ch => { ch.buf.push(ch.gen()); while (ch.buf.length > ch.max) ch.buf.shift(); drawChannel(ch);
-      const s = ch.buf[ch.buf.length - 1]; ch.read.textContent = s.text; ch.read.style.color = s.hot ? 'var(--amber-ink)' : ''; });
+    sub = (sub + 1) % EVERY;
+    channels.forEach(ch => {
+      if (sub === 0) {
+        ch.buf.push(ch.gen()); while (ch.buf.length > ch.max) ch.buf.shift();
+        const s = ch.buf[ch.buf.length - 1];
+        if (ch.read.textContent !== s.text) ch.read.textContent = s.text;
+        ch.read.style.color = s.hot ? 'var(--amber-ink)' : '';
+      }
+      drawChannel(ch, sub / EVERY);
+    });
     clock += 1 / 30; if (++frame % 15 === 0) document.getElementById('mon-clock').textContent = `t = ${Math.floor(clock)} s`;
   }
-  channels.forEach(drawChannel); monTick();
-  new ResizeObserver(() => { sizeCanvases(); channels.forEach(drawChannel); }).observe(monitor);
+  channels.forEach(ch => drawChannel(ch)); sub = EVERY - 1; monTick();
+  new ResizeObserver(() => { sizeCanvases(); channels.forEach(ch => drawChannel(ch, sub / EVERY)); }).observe(monitor);
   new IntersectionObserver(es => { monVisible = es[0].isIntersecting; }).observe(monitor);
 
   /* ---------- Die sechs ---------- */
