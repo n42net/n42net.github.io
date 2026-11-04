@@ -212,6 +212,11 @@ tr.grp-row:hover { background: none; }
 .m-item, .m-dot, .m-pk { transition: opacity .2s; }
 svg.dim .m-link:not(.on), svg.dim .m-item:not(.on), svg.dim .m-dot:not(.on), svg.dim .m-pk:not(.on) { opacity: .1; }
 svg.dim .m-link.on { opacity: .95; }
+.m-branch { fill: none; stroke: var(--line-2); stroke-width: 1.4; transition: opacity .2s, stroke .2s; }
+.m-route { fill: none; stroke: none; }
+.m-dot { transform-box: fill-box; transform-origin: center; }
+svg.dim .m-branch:not(.on) { opacity: .25; }
+svg.dim .m-branch.on { stroke: var(--muted); }
 .legend { display: flex; flex-wrap: wrap; gap: 6px 22px; font-size: 0.84rem; color: var(--muted); }
 .legend span { display: inline-flex; align-items: center; gap: 8px; }
 .legend i { display: inline-block; width: 26px; border-top: 1.6px solid var(--muted); }
@@ -1059,21 +1064,36 @@ footer .mono { font-size: 0.76rem; color: var(--dim); }
         `<image href="icons/${n}.svg" x="${M.x + 12}" y="${ty + 14}" width="52" height="52"/>` +
         `<text class="m-title" x="${M.x + 76}" y="${ty + 32}" style="font-family:var(--font-display);font-size:15.5px">${c.title}</text>` +
         `<text class="m-sub" x="${M.x + 76}" y="${ty + 51}">${l1}</text>` + (l2 ? `<text class="m-sub" x="${M.x + 76}" y="${ty + 66}">${l2}</text>` : '') + `</g>`;
-      links += `<path class="m-link" data-k="${n}" data-opt="0" data-stub="1" stroke="var(--${c.k})" d="M${M.x + M.w} ${ty + tileH / 2} L ${M.x + M.w + 22} ${ty + tileH / 2}"/>`;
+      links += `<path class="m-link" data-k="${n}" data-opt="0" data-stub="1" stroke="var(--${c.k})" d="M${M.x + M.w} ${ty + tileH / 2} L ${M.x + M.w + 44} ${ty + tileH / 2}"/>`;
     });
     let oy = 40;
     outs += `<text class="m-group" x="${R.x}" y="${oy}">${L('WAS IN HA ENTSTEHT', 'WHAT APPEARS IN HA')}</text>`; oy += 14;
-    OUTPUTS.forEach(o => {
-      outs += `<g class="m-item" data-k="${o.by.join(' ')}"><rect class="m-box" x="${R.x}" y="${oy}" width="${R.w}" height="62" rx="9"/>` +
+    const outY = [];
+    OUTPUTS.forEach((o, i) => {
+      outY.push(oy + 31);
+      outs += `<g class="m-item m-out" data-i="${i}" data-k="${o.by.join(' ')}"><rect class="m-box" x="${R.x}" y="${oy}" width="${R.w}" height="62" rx="9"/>` +
         `<text class="m-title" x="${R.x + 14}" y="${oy + 24}">${o.t}</text><text class="m-sub" x="${R.x + 14}" y="${oy + 44}">${o.s}</text></g>`;
       MAP_ORDER.forEach((n, j) => { if (o.by.includes(n)) outs += `<circle class="m-dot" data-k="${n}" cx="${R.x + R.w - 86 + j * 14}" cy="${oy + 19}" r="4.5" fill="var(--${C[n].k})"/>`; });
       oy += 72;
     });
-    const busX = M.x + M.w + 22, midY = (tileY[MAP_ORDER[2]] + tileY[MAP_ORDER[3]]) / 2 + tileH / 2;
-    outs += `<line x1="${busX}" y1="${tileY[MAP_ORDER[0]] + tileH / 2}" x2="${busX}" y2="${tileY[last] + tileH / 2}" stroke="var(--line-2)" stroke-width="1.6"/>`;
-    outs += `<path id="bus-out" d="M${busX} ${midY} L ${R.x - 14} ${midY}" stroke="var(--line-2)" stroke-width="1.6" fill="none"/>`;
-    outs += `<path d="M${R.x - 22} ${midY - 6} L ${R.x - 13} ${midY} L ${R.x - 22} ${midY + 6}" stroke="var(--muted)" stroke-width="1.6" fill="none"/>`;
-    svg.innerHTML = links + boxes + outs + tiles + '<g id="packets"></g>';
+    // Sammelstrang mit einem Ast je Ergebnis; unsichtbare Wege je Wacht und Ergebnis tragen die Pakete
+    const busX = M.x + M.w + 44, tileMid = n => tileY[n] + tileH / 2, rr = 8;
+    const ys = [...MAP_ORDER.map(tileMid), ...outY];
+    outs += `<line x1="${busX}" y1="${Math.min(...ys)}" x2="${busX}" y2="${Math.max(...ys)}" stroke="var(--line-2)" stroke-width="1.6"/>`;
+    let routesOut = '';
+    OUTPUTS.forEach((o, i) => {
+      const y0 = outY[i], k = o.by.join(' ');
+      outs += `<path class="m-branch" data-k="${k}" d="M${busX} ${y0} L ${R.x - 2} ${y0}"/>` +
+        `<path class="m-branch" data-k="${k}" d="M${R.x - 8} ${y0 - 4.5} L ${R.x - 2} ${y0} L ${R.x - 8} ${y0 + 4.5}"/>`;
+      o.by.forEach(n => {
+        const ty = tileMid(n), s = y0 > ty ? 1 : -1;
+        const d = Math.abs(y0 - ty) < 2 * rr
+          ? `M${M.x + M.w} ${ty} L ${busX} ${ty} L ${busX} ${y0} L ${R.x - 2} ${y0}`
+          : `M${M.x + M.w} ${ty} L ${busX - rr} ${ty} Q ${busX} ${ty} ${busX} ${ty + s * rr} L ${busX} ${y0 - s * rr} Q ${busX} ${y0} ${busX + rr} ${y0} L ${R.x - 2} ${y0}`;
+        routesOut += `<path class="m-route" data-k="${n}" data-i="${i}" d="${d}"/>`;
+      });
+    });
+    svg.innerHTML = links + routesOut + boxes + outs + tiles + '<g id="packets"></g>';
 
     const focus = n => {
       focusK = n;
@@ -1088,32 +1108,61 @@ footer .mono { font-size: 0.76rem; color: var(--dim); }
       t.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); location.hash = n; } });
     });
   })();
-  // Datenpakete entlang der Wege
+  // Datenpakete: Quelle → Wacht (Kachel leuchtet auf) → kurz verarbeiten → Ergebnis (Block leuchtet auf)
   const NS = 'http://www.w3.org/2000/svg';
   const pkLayer = svg.querySelector('#packets');
+  const tileRect = Object.fromEntries([...svg.querySelectorAll('.m-tile')].map(t => [t.dataset.k, t.querySelector('rect.bg')]));
+  const outBox = [...svg.querySelectorAll('.m-out')].map(g => g.querySelector('.m-box'));
+  const outDot = (i, k) => svg.querySelector(`.m-out[data-i="${i}"] .m-dot[data-k="${k}"]`);
   const routes = [...svg.querySelectorAll('.m-link:not([data-stub])')].map(p => ({
-    p, len: p.getTotalLength(), k: p.dataset.k, opt: p.dataset.opt === '1', color: p.getAttribute('stroke'), packets: [], next: Math.random() * 120
+    p, len: p.getTotalLength(), k: p.dataset.k, opt: p.dataset.opt === '1', packets: [], next: Math.random() * 120
   }));
+  const outRoutes = {};
+  svg.querySelectorAll('.m-route').forEach(p => (outRoutes[p.dataset.k] ||= []).push({ p, len: p.getTotalLength(), k: p.dataset.k, i: +p.dataset.i, packets: [] }));
+  const pending = [];
   let mapVisible = false;
+  const glow = (el, keyframe, ms) => { if (el && el.animate) el.animate([{ offset: 0, ...keyframe }], { duration: ms, easing: 'cubic-bezier(.2,.7,.3,1)' }); };
+  function packet(k) {
+    const g = document.createElementNS(NS, 'g'), col = COLORS[k];
+    g.setAttribute('class', 'm-pk' + (focusK === k ? ' on' : '')); g.dataset.k = k;
+    g.innerHTML = `<circle r="6.5" fill="${col}" opacity=".2"/><circle r="2.6" fill="${col}"/>`;
+    pkLayer.appendChild(g);
+    return { d: 0, el: g };
+  }
+  function move(r, speed, arrive) {
+    r.packets = r.packets.filter(pk => {
+      pk.d += speed;
+      if (pk.d >= r.len) { pk.el.remove(); arrive(r); return false; }
+      const pt = r.p.getPointAtLength(pk.d);
+      pk.el.setAttribute('transform', `translate(${pt.x.toFixed(1)} ${pt.y.toFixed(1)})`);
+      pk.el.setAttribute('opacity', Math.min(1, pk.d / 30).toFixed(2));
+      return true;
+    });
+  }
+  const atTile = r => {
+    const col = COLORS[r.k];
+    glow(tileRect[r.k], { fill: hexA(col, 0.16), strokeWidth: 2.6, filter: `drop-shadow(0 0 9px ${hexA(col, 0.75)})` }, 750);
+    pending.push({ k: r.k, wait: 9 });
+  };
+  const atOutput = r => {
+    const col = COLORS[r.k];
+    glow(outBox[r.i], { stroke: col, strokeWidth: 2, fill: hexA(col, 0.12), filter: `drop-shadow(0 0 7px ${hexA(col, 0.6)})` }, 900);
+    const dot = outDot(r.i, r.k);
+    if (dot && dot.animate) dot.animate([{ transform: 'scale(1)' }, { transform: 'scale(2)', offset: 0.25 }, { transform: 'scale(1)' }], { duration: 650, easing: 'ease-out' });
+  };
   function mapTick() {
     routes.forEach(r => {
       r.next -= 1;
-      if (r.next <= 0) {
-        const dot = document.createElementNS(NS, 'circle');
-        dot.setAttribute('r', '2.6'); dot.setAttribute('fill', r.color); dot.setAttribute('class', 'm-pk'); dot.dataset.k = r.k;
-        if (focusK === r.k) dot.classList.add('on');
-        pkLayer.appendChild(dot); r.packets.push({ d: 0, el: dot });
-        r.next = r.opt ? rnd(260, 420) : rnd(70, 150);
-      }
-      r.packets = r.packets.filter(pk => {
-        pk.d += 2.2;
-        if (pk.d >= r.len) { pk.el.remove(); return false; }
-        const pt = r.p.getPointAtLength(pk.d);
-        pk.el.setAttribute('cx', pt.x.toFixed(1)); pk.el.setAttribute('cy', pt.y.toFixed(1));
-        pk.el.setAttribute('opacity', Math.min(1, Math.min(pk.d, r.len - pk.d) / 30).toFixed(2));
-        return true;
-      });
+      if (r.next <= 0) { r.packets.push(packet(r.k)); r.next = r.opt ? rnd(260, 420) : rnd(70, 150); }
+      move(r, 2.2, atTile);
     });
+    for (let j = pending.length - 1; j >= 0; j--) {
+      if (--pending[j].wait > 0) continue;
+      const list = outRoutes[pending[j].k] || [];
+      if (list.length) { const r = list[Math.floor(Math.random() * list.length)]; r.packets.push(packet(r.k)); }
+      pending.splice(j, 1);
+    }
+    Object.values(outRoutes).flat().forEach(r => move(r, 2.6, atOutput));
   }
   new IntersectionObserver(es => { mapVisible = es[0].isIntersecting; }).observe(svg);
 
