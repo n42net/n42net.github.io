@@ -35,7 +35,7 @@ jobs:
       - name: Seite zusammenstellen
         run: |
           mkdir -p _site
-          cp -r index.html en.js data.js favicon.svg icons fonts _site/
+          cp -r index.html favicon.svg fonts home-assistant _site/
       - uses: actions/upload-pages-artifact@v5
       - id: deployment
         uses: actions/deploy-pages@v5

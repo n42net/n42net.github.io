@@ -4,7 +4,7 @@
   const sh = (label, h2, p) => `<div class="label">${label}</div><h2>${h2}</h2>${p}`;
   window.WACHT_EN = {
     text: {
-      top: 'To the top', sections: 'Sections', openCmdk: 'Open command palette', themeBtn: 'Change theme',
+      top: 'To the top', homeTitle: 'To the start page', sections: 'Sections', openCmdk: 'Open command palette', themeBtn: 'Change theme',
       family: 'The Wacht family', familySub: 'Six integrations, one family.', jump: 'Jump to …',
       nav: '<a href="#wachten">Integrations</a><a href="#gleisplan">Data flow</a><a href="#steckbrief">Profile</a><a href="#bauplan">Blueprint</a><a href="#werkstatt">Workshop</a><a href="#lebensweg">Release path</a><a href="#zahlen">Numbers</a>',
       lede: 'Six integrations for Home Assistant. Four around <b>energy</b>: heat pump, electricity tariff, home battery and PV feed-in. Two for <b>on the move and informed</b>: traffic and breaking news. Calculated locally, without third-party libraries, openly documented. Built with an AI agent under fixed rules, approved by a human. Wärmewacht works anywhere; the other five are built around German data sources and rules.',

@@ -1,5 +1,5 @@
 window.WACHT_DATA = {
- "generated": "2026-11-04T09:49Z",
+ "generated": "2026-11-04T10:58Z",
  "wachten": [
   {
    "name": "streckenwacht",

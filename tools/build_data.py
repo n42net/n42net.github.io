@@ -1,10 +1,10 @@
 """Collect the public numbers of all Wacht integrations for the overview page.
 
-Writes ``data.js`` (``window.WACHT_DATA = {...}``) and ``icons/<name>.svg``
-next to ``index.html``. Everything comes from public GitHub data: the REST
-API and a shallow clone of each repository's ``main``. Nothing from a Home
-Assistant instance, nothing hand-typed - the hand-written texts live in
-``index.html``.
+Writes ``home-assistant/data.js`` (``window.WACHT_DATA = {...}``) and
+``home-assistant/icons/<name>.svg`` next to the overview page. Everything
+comes from public GitHub data: the REST API and a shallow clone of each
+repository's ``main``. Nothing from a Home Assistant instance, nothing
+hand-typed - the hand-written texts live in ``home-assistant/index.html``.
 
 Usage: python tools/build_data.py [--cache DIR]
 Token: GITHUB_TOKEN, else ``gh auth token``.
@@ -24,7 +24,7 @@ import urllib.request
 from datetime import UTC, datetime
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parent.parent / "home-assistant"
 WACHTEN = [
     "streckenwacht",
     "eilwacht",
