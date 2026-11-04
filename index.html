@@ -60,8 +60,7 @@ p { margin: 0; }
 .gutter { padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); }
 .wrap { max-width: 880px; margin: 0 auto; width: 100%; }
 .label { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
-.mark { display: grid; grid-template-columns: repeat(3, 7px); gap: 2px; }
-.mark i { width: 7px; height: 7px; border-radius: 2px; display: block; }
+.mark { width: 24px; height: 24px; flex: none; display: block; }
 .beacon { width: 8px; height: 8px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 0 3px color-mix(in srgb, var(--amber) 25%, transparent), 0 0 14px color-mix(in srgb, var(--amber) 70%, transparent); flex: none; animation: pulse 2.4s ease-in-out infinite; }
 @keyframes pulse { 50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--amber) 0%, transparent), 0 0 18px color-mix(in srgb, var(--amber) 90%, transparent); } }
 
@@ -110,7 +109,7 @@ footer .wrap { padding-block: 56px 32px; font-size: 0.82rem; color: var(--dim); 
 
 <header class="bar gutter">
   <div class="wrap">
-    <a class="brand" href="./"><span class="mark" id="mark" aria-hidden="true"></span>n42net<span class="morse" id="morse" aria-hidden="true" title="n42"></span></a>
+    <a class="brand" href="./"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="8.4" style="fill:var(--amber);opacity:.2"/><circle cx="16" cy="16" r="11.5" pathLength="12" style="fill:none;stroke:var(--line-2);stroke-width:2.2;stroke-linecap:round;stroke-dasharray:.5 .5"/><circle cx="16" cy="16" r="3.4" style="fill:var(--fg)"/><circle cx="24.1" cy="7.9" r="5.2" style="fill:var(--bg)"/><circle cx="24.1" cy="7.9" r="4.6" style="fill:var(--amber);opacity:.28"/><circle cx="24.1" cy="7.9" r="3" style="fill:var(--amber)"/></svg>n42net<span class="morse" id="morse" aria-hidden="true" title="n42"></span></a>
     <a class="lang" id="lang" href="?lang=en" hreflang="en" lang="en" title="English">EN</a>
   </div>
 </header>
@@ -177,7 +176,6 @@ footer .wrap { padding-block: 56px 32px; font-size: 0.82rem; color: var(--dim); 
   // gleiche Reihenfolge wie auf der Übersicht: Energie, dann unterwegs
   const ORDER = [['waermewacht', 'ww', 'Wärmewacht'], ['tarifwacht', 'tw', 'Tarifwacht'], ['speicherwacht', 'spw', 'Speicherwacht'],
     ['einspeisewacht', 'esw', 'Einspeisewacht'], ['streckenwacht', 'sw', 'Streckenwacht'], ['eilwacht', 'ew', 'Eilwacht']];
-  document.getElementById('mark').innerHTML = ORDER.map(([, k]) => `<i style="background:var(--tile-${k})"></i>`).join('');
   document.getElementById('icons').innerHTML = ORDER.map(([n, , t]) => `<img src="home-assistant/icons/${n}.svg" alt="${t}" title="${t}" width="44" height="44">`).join('');
 
   const D = window.WACHT_DATA || { wachten: [] };
