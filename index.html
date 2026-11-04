@@ -136,13 +136,17 @@ kbd { font-family: var(--font-mono); font-size: 0.7rem; padding: 2px 6px; border
 .mon-head .label { display: flex; align-items: center; gap: 8px; }
 .dots { display: flex; gap: 6px; }
 .dots i { width: 9px; height: 9px; border-radius: 50%; background: var(--line-2); display: block; }
-.mon-row { display: grid; grid-template-columns: 22px 116px minmax(0, 1fr) 104px; align-items: center; gap: 12px; padding: 9px 16px; border-bottom: 1px solid var(--line); }
+.mon-row { display: grid; grid-template-columns: 22px 116px minmax(0, 1fr) 128px; align-items: center; gap: 12px; padding: 9px 16px; border-bottom: 1px solid var(--line); }
 .mon-row:last-of-type { border-bottom: 0; }
 .mon-row img { width: 22px; height: 22px; display: block; }
 .mon-row .nm { font-family: var(--font-display); font-weight: 600; font-size: 0.9rem; }
 .mon-row .sig { font-size: 0.72rem; color: var(--dim); font-family: var(--font-mono); display: block; line-height: 1.3; }
 .mon-row canvas { width: 100%; height: 34px; display: block; }
-.mon-row .read { font-family: var(--font-mono); font-size: 0.8rem; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.mon-row .read { font-family: var(--font-mono); font-size: 0.8rem; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; display: flex; flex-direction: column; align-items: flex-end; line-height: 1.3; }
+.mon-row .read .hot { color: var(--amber-ink); }
+.mon-row .read .s { font-size: 0.68rem; color: var(--dim); }
+.mon-row .read .s.good { color: var(--ok); }
+.mon-row .read .s.hot { color: var(--amber-ink); }
 .mon-foot { padding: 10px 16px; font-size: 0.76rem; color: var(--dim); border-top: 1px solid var(--line); font-family: var(--font-mono); display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 
 /* KPI-Leiste */
@@ -392,7 +396,7 @@ footer .mono { font-size: 0.76rem; color: var(--dim); }
   .kpi:nth-child(-n+2) { border-top: 0; }
   .g4, .g2, .grid3, .ties { grid-template-columns: minmax(0, 1fr); }
   .mon-row { grid-template-columns: 22px 84px minmax(0, 1fr) 92px; gap: 8px; padding: 8px 12px; }
-  .mon-row .sig { display: none; }
+  .mon-row .sig, .mon-row .read .s { display: none; }
   .layer { grid-template-columns: minmax(0, 1fr); gap: 10px; }
   .card-head { grid-template-columns: 52px minmax(0, 1fr); gap: 14px; padding: 18px; }
   .card-head img { width: 52px; height: 52px; border-radius: 12px; }
@@ -919,33 +923,63 @@ footer .mono { font-size: 0.76rem; color: var(--dim); }
   const Q = 8, DAY = 40 * Q;
   const ct = p => `${p < 0 ? '−' : ''}${dec(Math.abs(p))} ct/kWh`;
   const bump = (x, mid, width) => Math.exp(-Math.pow((x - mid) / width, 2));
+  // Jeder Wert: v (0…1, Kurve), text (Hauptwert), sub/tone (zweite Zeile, 'good' oder 'hot'), hot (Hauptwert in Amber)
+  const FIXED = 28.4;
   const GEN = {
-    streckenwacht: () => { let n = 2; return () => { if (Math.random() < 0.012) n = Math.max(0, Math.min(5, n + (Math.random() < 0.5 ? -1 : 1))); return { v: n / 5, text: L(`${n} Meldung${n === 1 ? '' : 'en'}`, `${n} event${n === 1 ? '' : 's'}`), step: true }; }; },
-    eilwacht: () => { let a = 0; return () => { if (a < 0.02 && Math.random() < 0.006) a = 1; a *= 0.97; return { v: a, text: a > 0.3 ? L('aktiv', 'active') : L('ruhig', 'quiet'), hot: a > 0.3 }; }; },
+    streckenwacht: () => {
+      const TYPES = [[L('Stau', 'Jam'), true], [L('Unfall', 'Accident'), true], [L('Baustelle', 'Roadworks'), false], [L('Sperrung', 'Closure'), false]];
+      const make = () => { const [name, hot] = TYPES[Math.floor(Math.random() * TYPES.length)]; return { hot, label: name === TYPES[0][0] ? `${name} +${Math.round(rnd(4, 25))} min` : name }; };
+      const ev = [make(), make()];
+      return () => {
+        if (Math.random() < 0.012) { if (!ev.length || (ev.length < 5 && Math.random() < 0.55)) ev.push(make()); else ev.shift(); }
+        const n = ev.length, last = ev[n - 1];
+        return { v: n / 5, step: true, text: L(`${n} Meldung${n === 1 ? '' : 'en'}`, `${n} event${n === 1 ? '' : 's'}`),
+          sub: last ? last.label : L('alles frei', 'all clear'), tone: !last ? 'good' : last.hot ? 'hot' : '' };
+      };
+    },
+    eilwacht: () => { let a = 0, today = 1 + Math.floor(rnd(0, 3)); return () => {
+      if (a < 0.02 && Math.random() < 0.006) { a = 1; today += 1; }
+      a *= 0.97;
+      return { v: a, text: a > 0.3 ? L('aktiv', 'active') : L('ruhig', 'quiet'), hot: a > 0.3, sub: L(`${today} heute`, `${today} today`) }; }; },
     einspeisewacht: () => { let t = Math.floor(rnd(0, DAY)), p = null; return () => {
       if (t++ % Q === 0 || p === null) { const ph = (t % DAY) / DAY; p = 7 + 6 * Math.cos(2 * Math.PI * ph) - 12 * bump(ph, 0.5, 0.09) + rnd(-0.8, 0.8); }
-      return { v: (p + 13) / 28, zero: 13 / 28, text: ct(p), hot: p < 0, step: true }; }; },
+      return { v: (p + 13) / 28, zero: 13 / 28, text: ct(p), hot: p < 0, step: true,
+        sub: p < 0 ? L('nicht vergütet', 'unpaid') : L('vergütet', 'paid'), tone: p < 0 ? 'hot' : 'good' }; }; },
     tarifwacht: () => { let t = Math.floor(rnd(0, DAY)), p = null; return () => {
       if (t++ % Q === 0 || p === null) { const ph = (t % DAY) / DAY; p = 28 - 7 * bump(ph, 0.5, 0.12) + 9 * bump(ph, 0.8, 0.07) + rnd(-1, 1); }
-      return { v: (p - 18) / 22, ref: (28.4 - 18) / 22, text: ct(p), step: true }; }; },
-    waermewacht: () => { let on = true, left = rnd(60, 120), base = 1.9, p = base, defrost = 0; return () => {
-      if (--left <= 0) { on = !on; left = on ? rnd(90, 170) : rnd(40, 90); base = rnd(1.5, 2.3); }
+      const diff = p - FIXED, cheaper = diff < 0;
+      return { v: (p - 18) / 22, ref: (FIXED - 18) / 22, text: ct(p), step: true, tone: cheaper ? 'good' : 'hot',
+        sub: cheaper ? L(`${dec(-diff)} ct günstiger`, `${dec(-diff)} ct lower`) : L(`${dec(diff)} ct teurer`, `${dec(diff)} ct higher`) }; }; },
+    waermewacht: () => { let on = true, left = rnd(60, 120), base = 1.9, p = base, defrost = 0, az = rnd(3.9, 4.4), runs = 8 + Math.floor(rnd(0, 6)); return () => {
+      if (--left <= 0) {
+        on = !on; left = on ? rnd(90, 170) : rnd(40, 90); base = rnd(1.5, 2.3);
+        if (on) runs += 1; else az = Math.max(3.6, Math.min(4.6, az + rnd(-0.08, 0.08)));
+      }
       if (on && defrost <= 0 && Math.random() < 0.004) defrost = 12;
       const target = !on ? 0 : defrost > 0 ? 0.25 : base;
       if (defrost > 0) defrost -= 1;
       p += (target - p) * 0.18;
       const text = on && defrost > 0 ? L('Abtauen', 'defrost') : p < 0.05 ? L('aus', 'off') : `${dec(p)} kW`;
-      return { v: p / 3, text }; }; },
-    speicherwacht: () => { let t = rnd(0, DAY), soc = 55; return () => {
-      const ph = (t++ % DAY) / DAY; soc = Math.max(8, Math.min(100, soc + (ph > 0.3 && ph < 0.7 ? 0.45 : -0.2)));
-      return { v: soc / 100, text: `SoC ${Math.round(soc)} %` }; }; }
+      return { v: p / 3, text, sub: L(`AZ ${dec(az)} · ${runs} Takte`, `PF ${dec(az)} · ${runs} cycles`) }; }; },
+    speicherwacht: () => {
+      let t = rnd(0, DAY), soc = 55, out = 0, cycles = 180 + Math.floor(rnd(0, 60)), k = 0;
+      const eff = Math.round(rnd(89, 93)), cap = rnd(9.3, 9.8);
+      return () => {
+        const ph = (t++ % DAY) / DAY, before = soc;
+        soc = Math.max(8, Math.min(100, soc + (ph > 0.3 && ph < 0.7 ? 0.45 : -0.2)));
+        if (soc < before) { out += before - soc; if (out >= 100) { out -= 100; cycles += 1; } }
+        const facts = [L(`Wirkungsgrad ${eff} %`, `Efficiency ${eff} %`), L(`Kapazität ≈ ${dec(cap)} kWh`, `Capacity ≈ ${dec(cap)} kWh`), L(`${cycles} Vollzyklen`, `${cycles} full cycles`)];
+        const arrow = soc > before ? ' ↑' : soc < before ? ' ↓' : '';
+        return { v: soc / 100, text: `SoC ${Math.round(soc)} %${arrow}`, sub: facts[Math.floor(k++ / 32) % facts.length] };
+      };
+    }
   };
   const monitor = document.getElementById('monitor');
   monitor.innerHTML = CONTENT.map(c => `<div class="mon-row" style="--c:var(--${c.k})">${icon(c.name, 22)}<div><span class="nm">${c.title}</span><span class="sig">${c.sig}</span></div><canvas data-n="${c.name}" aria-hidden="true"></canvas><span class="read" data-r="${c.name}">–</span></div>`).join('');
   const channels = CONTENT.map(c => ({ c, gen: GEN[c.name](), buf: [], canvas: monitor.querySelector(`canvas[data-n="${c.name}"]`), read: monitor.querySelector(`[data-r="${c.name}"]`) }));
   let COLORS = {};
   function refreshColors() {
-    COLORS = { line: css('--line'), dim: css('--dim'), amber: css('--amber') };
+    COLORS = { line: css('--line'), dim: css('--dim'), amber: css('--amber'), ok: css('--ok') };
     CONTENT.forEach(c => COLORS[c.name] = css('--' + c.k));
   }
   refreshColors();
@@ -967,21 +1001,25 @@ footer .mono { font-size: 0.76rem; color: var(--dim); }
     g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
     const pad = 4, Y = v => h - pad - Math.max(0, Math.min(1, v)) * (h - 2 * pad);
     const last = buf[buf.length - 1] || {};
-    g.lineWidth = 1; g.setLineDash([2, 3]); g.strokeStyle = COLORS.line;
-    if (last.zero !== undefined || last.ref !== undefined) { const y = Y(last.zero ?? last.ref); g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke(); }
-    g.setLineDash([]);
+    const base = last.zero ?? last.ref;
+    if (base !== undefined) { g.lineWidth = 1; g.setLineDash([3, 3]); g.strokeStyle = COLORS.dim; g.beginPath(); g.moveTo(0, Y(base)); g.lineTo(w, Y(base)); g.stroke(); g.setLineDash([]); }
     // jüngster Wert wandert bis zur nächsten Abtastung um frac nach links, rechts davon gilt er weiter
     const col = COLORS[ch.c.name] || '#888', x0 = w - (buf.length - 1 + frac) * STEP, head = w - 3;
     g.beginPath();
     buf.forEach((s, i) => { const x = x0 + i * STEP, y = Y(s.v); if (i === 0) g.moveTo(x, y); else if (s.step) { g.lineTo(x, Y(buf[i - 1].v)); g.lineTo(x, y); } else g.lineTo(x, y); });
     if (buf.length) g.lineTo(head, Y(last.v));
     g.lineWidth = 1.6; g.strokeStyle = col; g.stroke();
-    g.lineTo(head, h); g.lineTo(x0, h); g.closePath();
-    const grad = g.createLinearGradient(0, 0, 0, h); grad.addColorStop(0, hexA(col, 0.22)); grad.addColorStop(1, hexA(col, 0));
-    g.fillStyle = grad; g.fill();
-    if (last.zero !== undefined) { // negative Preise in Amber hervorheben
-      g.fillStyle = hexA(COLORS.amber, 0.28);
-      buf.forEach((s, i) => { if (s.v < s.zero) { const x = x0 + i * STEP, wd = i === buf.length - 1 ? head - x : STEP; g.fillRect(x, Y(s.zero), wd, Y(s.v) - Y(s.zero)); } });
+    const band = (test, color) => { // Fläche zwischen Kurve und Bezugslinie, je Abtastung
+      g.fillStyle = color;
+      buf.forEach((s, i) => { if (test(s)) { const x = x0 + i * STEP, wd = i === buf.length - 1 ? head - x : STEP; g.fillRect(x, Y(base), wd, Y(s.v) - Y(base)); } });
+    };
+    if (last.ref !== undefined) { // günstiger als Festpreis grün, teurer amber
+      band(s => s.v < s.ref, hexA(COLORS.ok, 0.22)); band(s => s.v >= s.ref, hexA(COLORS.amber, 0.22));
+    } else {
+      g.lineTo(head, h); g.lineTo(x0, h); g.closePath();
+      const grad = g.createLinearGradient(0, 0, 0, h); grad.addColorStop(0, hexA(col, 0.22)); grad.addColorStop(1, hexA(col, 0));
+      g.fillStyle = grad; g.fill();
+      if (last.zero !== undefined) band(s => s.v < s.zero, hexA(COLORS.amber, 0.3)); // negative Preise
     }
     if (buf.length) { const y = Y(last.v); g.fillStyle = col; g.beginPath(); g.arc(head, y, 2.6, 0, Math.PI * 2); g.fill(); g.fillStyle = hexA(col, 0.25); g.beginPath(); g.arc(head, y, 6, 0, Math.PI * 2); g.fill(); }
   }
@@ -994,8 +1032,8 @@ footer .mono { font-size: 0.76rem; color: var(--dim); }
       if (sub === 0) {
         ch.buf.push(ch.gen()); while (ch.buf.length > ch.max) ch.buf.shift();
         const s = ch.buf[ch.buf.length - 1];
-        if (ch.read.textContent !== s.text) ch.read.textContent = s.text;
-        ch.read.style.color = s.hot ? 'var(--amber-ink)' : '';
+        const html = `<span class="v${s.hot ? ' hot' : ''}">${s.text}</span>` + (s.sub ? `<span class="s ${s.tone || ''}">${s.sub}</span>` : '');
+        if (ch.html !== html) { ch.read.innerHTML = html; ch.html = html; }
       }
       drawChannel(ch, sub / EVERY);
     });
