@@ -1306,13 +1306,12 @@ footer .mono { font-size: 0.76rem; color: var(--dim); }
   document.getElementById('stand').textContent = `data.js · ${DATA.generated || '–'} · tools/build_data.py`;
 
   /* ---------- Mitarbeit ---------- */
-  // Reihenfolge und PR-Zahlen kommen aus data.js (contributions), Name und Beschreibung von hier
+  // Reihenfolge und PR-Zahlen aus data.js (contributions), Name und Beschreibung von hier. Nur mit gemergtem oder offenem PR
   const TIES = {
     'serbanb11/bosch-homecom-hass': ['Bosch HomeCom', L('Bosch-Wärmepumpen über die Bosch-Cloud in HA. Eine der beiden erprobten Quellen der Wärmewacht.', 'Bosch heat pumps in HA via the Bosch cloud. One of Wärmewacht’s two tested sources.')],
     'serbanb11/homecom_alt': ['homecom_alt', L('Die Python-Bibliothek dahinter.', 'The Python library behind it.')],
     'hackwell/homeassistant-anio': ['ANIO Smartwatch', L('Kinder-Smartwatches in HA.', 'Children’s smartwatches in HA.')],
     'mampfes/hacs_waste_collection_schedule': ['Waste Collection Schedule', L('Abfuhrtermine vieler Entsorger als Kalender.', 'Waste collection dates from many providers as calendars.')],
-    'chemelli74/aioamazondevices': ['aioamazondevices', L('Bibliothek hinter der Core-Integration „Alexa Devices“.', 'Library behind the core integration “Alexa Devices”.')],
     'volter-labs/volcast-ha-integration': ['Volcast', L('PV-Prognose für HA.', 'PV forecast for HA.')],
     'tronity/homeassistant': ['TRONITY', L('Daten von Elektroautos über TRONITY.', 'Electric car data via TRONITY.')],
     'AshGSmith/solar-forecast-card': ['Solar Forecast Card', L('Lovelace-Karte für PV-Prognosen.', 'Lovelace card for PV forecasts.')],
@@ -1324,7 +1323,7 @@ footer .mono { font-size: 0.76rem; color: var(--dim); }
     merged ? `${pr(merged)} ${L('gemergt', 'merged')}` : '',
     open ? (merged ? `${open} ${L('offen', 'open')}` : `${pr(open)} ${L('offen', 'open')}`) : ''
   ].filter(Boolean).join(' · ') || pr(prs);
-  document.getElementById('ties').innerHTML = (DATA.contributions || []).filter(x => TIES[x.repo] && x.prs).map(x => {
+  document.getElementById('ties').innerHTML = (DATA.contributions || []).filter(x => TIES[x.repo] && (x.merged || x.open)).map(x => {
     const [n, what] = TIES[x.repo], role = [x.maintainer ? 'Co-Maintainer' : '', prText(x)].filter(Boolean).join(' · ');
     return `<li><a href="https://github.com/${x.repo}"><b>${n}</b> <span class="repo">${x.repo}</span></a><span class="role">${role}</span><span class="what">${what}</span></li>`;
   }).join('');

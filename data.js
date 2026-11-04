@@ -1,5 +1,5 @@
 window.WACHT_DATA = {
- "generated": "2026-11-04T09:20Z",
+ "generated": "2026-11-04T09:49Z",
  "wachten": [
   {
    "name": "streckenwacht",
@@ -480,13 +480,6 @@ window.WACHT_DATA = {
    "prs": 1,
    "merged": 0,
    "open": 1
-  },
-  {
-   "repo": "chemelli74/aioamazondevices",
-   "maintainer": false,
-   "prs": 1,
-   "merged": 0,
-   "open": 0
   }
  ]
 };

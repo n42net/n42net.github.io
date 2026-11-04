@@ -55,7 +55,6 @@ CONTRIBUTIONS = [
     ("Ralleberg/ha-hrv-card", False),
     ("tronity/homeassistant", False),
     ("AshGSmith/solar-forecast-card", False),
-    ("chemelli74/aioamazondevices", False),
 ]
 
 
