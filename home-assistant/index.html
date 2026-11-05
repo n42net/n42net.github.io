@@ -469,7 +469,7 @@ footer .mono { font-size: 0.76rem; color: var(--dim); }
       <div class="sec-head" data-t="s1">
         <div class="label">01 · Die sechs</div>
         <h2>Was jede Wacht beantwortet</h2>
-        <p>Jede Demo läuft im Browser und rechnet mit dem echten Code der Integration, zeigt aber nur erfundene Daten. Installiert wird über HACS.</p>
+        <p>Jede Demo läuft im Browser und rechnet mit dem echten Code der Integration, zeigt aber nur erfundene Daten. Installiert wird über den Marketplace von Home Assistant (bis 2026.10: HACS).</p>
       </div>
       <div class="six" id="six"></div>
     </section>
@@ -579,7 +579,7 @@ footer .mono { font-size: 0.76rem; color: var(--dim); }
         <div class="lp"><span class="who agent">Agent</span><b>Bauen</b><span>Code, Tests, Doku, Changelog auf <code>dev</code></span></div>
         <div class="lp"><span class="who ci">CI</span><b>Prüfen</b><span>Tests, hassfest, HACS, ältere HA-Version</span></div>
         <div class="lp gate"><span class="who human">Mensch</span><b>Freigeben</b><span>Text und Ergebnis sehen, dann Ja oder Nein</span></div>
-        <div class="lp"><span class="who ci">GitHub</span><b>Ausliefern</b><span>Release mit ZIP, HACS zeigt das Update</span></div>
+        <div class="lp"><span class="who ci">GitHub</span><b>Ausliefern</b><span>Release mit ZIP, der Marketplace zeigt das Update</span></div>
       </div>
     </section>
 
@@ -587,7 +587,7 @@ footer .mono { font-size: 0.76rem; color: var(--dim); }
       <div class="sec-head" data-t="s6">
         <div class="label">06 · Lebensweg</div>
         <h2>Wie eine neue Version zu Home Assistant kommt</h2>
-        <p>Kein Server dazwischen: Jede HA-Instanz holt sich das Release selbst über HACS. Der Ablauf ist in allen sechs Repositories gleich.</p>
+        <p>Kein Server dazwischen: Jede HA-Instanz holt sich das Release selbst über den Marketplace (früher HACS). Der Ablauf ist in allen sechs Repositories gleich.</p>
       </div>
       <div class="life">
         <div class="term" aria-label="Release-Ablauf als Terminal" data-ta="aria-label:termAria">
@@ -1264,7 +1264,7 @@ footer .mono { font-size: 0.76rem; color: var(--dim); }
       <article class="card" style="--c:var(--${c.k});--tilec:var(--tile-${c.k})">
         <div class="card-head">${icon(c.name, 72)}
           <div><div class="tag">${c.tagline}</div><h3>${c.title}</h3><p class="q">${c.q}</p></div>
-          <button class="copy" type="button" data-copy="${w.url || ''}" title="${L('Repository-Adresse für HACS kopieren', 'Copy repository address for HACS')}">
+          <button class="copy" type="button" data-copy="${w.url || ''}" title="${L('Repository-Adresse kopieren (Marketplace: Über Link hinzufügen)', 'Copy repository address (Marketplace: add via link)')}">
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="5" y="5" width="9" height="9" rx="2"/><path d="M11 5V3.5A1.5 1.5 0 009.5 2h-6A1.5 1.5 0 002 3.5v6A1.5 1.5 0 003.5 11H5"/></svg>${(w.repo || '').replace('/integration', '')}/integration</button>
         </div>
         <div class="card-body">

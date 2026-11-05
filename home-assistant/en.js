@@ -9,12 +9,12 @@
       nav: '<a href="#wachten">Integrations</a><a href="#gleisplan">Data flow</a><a href="#steckbrief">Profile</a><a href="#bauplan">Blueprint</a><a href="#werkstatt">Workshop</a><a href="#lebensweg">Release path</a><a href="#zahlen">Numbers</a>',
       lede: 'Six integrations for Home Assistant. Four around <b>energy</b>: heat pump, electricity tariff, home battery and PV feed-in. Two for <b>on the move and informed</b>: traffic and breaking news. Calculated locally, without third-party libraries, openly documented. Built with an AI agent under fixed rules, approved by a human. Wärmewacht works anywhere; the other five are built around German data sources and rules.',
       ctaDemos: 'View demos', monAria: 'Channel monitor with synthetic signals', monTitle: 'Channel monitor', monFoot: 'Signals synthetic, not measurements',
-      s1: sh('01 · The six', 'What each integration answers', '<p>Each demo runs in the browser and calculates with the integration’s real code, but shows invented data only. Installation is via HACS.</p>'),
+      s1: sh('01 · The six', 'What each integration answers', '<p>Each demo runs in the browser and calculates with the integration’s real code, but shows invented data only. Installation is via the Home Assistant Marketplace (up to 2026.10: HACS).</p>'),
       s2: sh('02 · Data flow', 'Where the data comes from and what it becomes', '<p>Sources on the left, the integrations in the middle, what appears in Home Assistant on the right. Hover over an integration or select it with Tab: only its paths stay visible. A click opens its profile.</p>'),
       s3: sh('03 · Profile', 'How an integration works inside', '<p>Process, the key decisions in the code and the repository’s figures. Figures and manifest come automatically from <code>main</code>.</p>'),
       s4: sh('04 · Blueprint', 'Six integrations, one blueprint', '<p>Streckenwacht came first. Structure, docs, tests and release process were tried out there and adopted by the others. If the pattern changes, all six follow.</p>'),
       s5: sh('05 · Workshop', 'A human decides, an agent builds', '<p>The integrations are built with Claude Code, an AI agent. It writes code, tests and docs. What gets built, what applies and what gets published is decided by the owner. The rules for this are public in every repository.</p>'),
-      s6: sh('06 · Release path', 'How a new version reaches Home Assistant', '<p>No server in between: every HA instance fetches the release itself via HACS. The process is the same in all six repositories.</p>'),
+      s6: sh('06 · Release path', 'How a new version reaches Home Assistant', '<p>No server in between: every HA instance fetches the release itself via the Marketplace (formerly HACS). The process is the same in all six repositories.</p>'),
       s7: sh('07 · Numbers', 'The repositories at a glance', '<p id="zahlen-stand"></p>'),
       s8: sh('08 · Contributions', 'Contributions to other projects', '<p>Bugs in source integrations that turn up while working on the integrations are reported or fixed there instead of worked around.</p>'),
       mapAria: 'Data sources, the six integrations and what appears in Home Assistant',
@@ -43,7 +43,7 @@
         ['', 'agent', 'Agent', 'Build', 'Code, tests, docs, changelog on <code>dev</code>'],
         ['', 'ci', 'CI', 'Check', 'Tests, hassfest, HACS, older HA version'],
         ['gate', 'human', 'Human', 'Approve', 'See text and result, then yes or no'],
-        ['', 'ci', 'GitHub', 'Ship', 'Release with ZIP, HACS shows the update']
+        ['', 'ci', 'GitHub', 'Ship', 'Release with ZIP, the Marketplace shows the update']
       ].map(([g, cls, who, b, s]) => `<div class="lp${g ? ' gate' : ''}"><span class="who ${cls}">${who}</span><b>${b}</b><span>${s}</span></div>`).join(''),
       termAria: 'Release process as a terminal', play: '▶ play',
       footer: 'No cookies, no tracking, no third-party requests. All values in the demos are invented.',
