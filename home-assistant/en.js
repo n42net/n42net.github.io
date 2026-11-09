@@ -146,7 +146,7 @@
           ['Map', 'The template finds heat and power meters, compressor and operating mode by itself'],
           ['Detect runs', 'Compressor runs, defrosts and standby kept apart'],
           ['Calculate', 'Performance factor = total heat ÷ total electricity, per mode and period'],
-          ['In HA', 'Performance factors, cycles, heating load, costs and gas comparison, health check'],
+          ['In HA', 'Performance factors, Carnot efficiency, cycles, heating load, costs and gas comparison, health check'],
           ['What for', 'Notice when efficiency drops or the backup heater runs needlessly']
         ],
         hood: [
@@ -154,6 +154,7 @@
           ['Standby separated', 'Power drawn while the compressor stands still does not count towards the per-mode factor, but does towards the overall seasonal factor. Method as in the Fraunhofer ISE field test, system boundary named after SEPEMO.'],
           ['Look back from statistics', 'At setup, the current season is read from long-term statistics. Performance curve and health check compare periods with the same method.'],
           ['Analysis', 'Performance curve over outdoor temperature, heating load in W/K with heating limit, degree days, cycling per outdoor temperature.'],
+          ['Carnot efficiency', 'Performance factor divided by the best possible one (Carnot) at the same temperatures. Takes weather and heating curve out and compares the winter with the Fraunhofer ISE field test (air/water 0.32 to 0.44). Also backwards from long-term statistics.'],
           ['Gas mode', 'Separate entry type for gas boilers before switching: heating load from gas consumption.']
         ],
         not: '<b>Reads only, never controls.</b> A guide, not a professional diagnosis. The values are only as good as the heat pump’s meters.',
