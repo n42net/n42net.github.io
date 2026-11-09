@@ -768,15 +768,15 @@ footer .mono { font-size: 0.76rem; color: var(--dim); }
         ['Zuordnen', 'Die Vorlage findet Wärme- und Stromzähler, Kompressor und Betriebsart selbst'],
         ['Läufe erkennen', 'Kompressorläufe, Abtauungen und Stillstand getrennt'],
         ['Rechnen', 'Arbeitszahl = Summe Wärme ÷ Summe Strom, je Betriebsart und Zeitraum'],
-        ['In HA', 'Arbeitszahlen, Gütegrad, Takte, Heizlast, Kosten und Gasvergleich, Gesundheits-Check'],
+        ['In HA', 'Arbeitszahlen, Gütegrad, Takte, Heizlast, Kosten und Gasvergleich, Gesundheits-Check, eigene Karten'],
         ['Wofür', 'Merken, wenn die Effizienz sinkt oder der Heizstab unnötig läuft']
       ],
       hood: [
         ['Vorlagen als Daten', 'Welche Entität welches Signal ist und welcher Zustandswert was bedeutet, steht in Vorlagen. Erprobt für EMS-ESP, Bosch HomeCom, Daikin (P1P2MQTT), Lambda und Viessmann, Beta-Vorlagen für Luxtronik, Stiebel ISG, HeishaMon, iDM, Mitsubishi Ecodan, Vaillant, Waterkotte und Buderus (MX300/MX400).'],
         ['Stillstand abgetrennt', 'Strom bei stehendem Kompressor zählt nicht in die Arbeitszahl je Betriebsart, wohl aber in die Gesamt-JAZ. Vorgehen wie im Feldtest des Fraunhofer ISE, Bilanzgrenze nach SEPEMO benannt.'],
         ['Rückblick aus der Statistik', 'Beim Einrichten wird die laufende Saison aus der Langzeitstatistik gelesen. Kennlinie und Gesundheits-Check vergleichen Zeiträume mit derselben Methode.'],
-        ['Analyse', 'AZ-Kennlinie über der Außentemperatur, Heizlast in W/K mit Heizgrenze, Gradtage, Takten je Außentemperatur.'],
-        ['Gütegrad', 'Arbeitszahl geteilt durch die bestmögliche (Carnot) bei denselben Temperaturen. Nimmt Wetter und Heizkurve heraus und vergleicht den Winter mit dem Feldtest des Fraunhofer ISE (Luft/Wasser 0,32 bis 0,44). Auch rückwirkend aus der Langzeitstatistik.'],
+        ['Analyse', 'AZ-Kennlinie über der Außentemperatur, Heizlast in W/K mit Heizgrenze, Gradtage, Laufzeit und Takten je Außentemperatur („läuft durch unter“, „Kurzläufe ab“).'],
+        ['Gütegrad', 'Arbeitszahl geteilt durch die bestmögliche (Carnot) bei denselben Temperaturen. Nimmt Wetter und Heizkurve heraus und vergleicht den Winter mit dem Feldtest des Fraunhofer ISE (Luft/Wasser 0,32 bis 0,44). Auch rückwirkend aus der Langzeitstatistik. Darauf aufbauend: was eine um 1, 2 oder 3 K tiefere Heizkurve an Strom und Euro gespart hätte.'],
         ['Gas-Modus', 'Eigener Eintragstyp für Gasheizungen vor dem Umstieg: Heizlast aus dem Gasverbrauch.']
       ],
       not: '<b>Liest nur, steuert nie.</b> Eine Orientierung, keine Fachdiagnose. Die Werte sind so gut wie die Zähler der Wärmepumpe.',
