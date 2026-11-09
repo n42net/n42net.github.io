@@ -104,7 +104,7 @@
           ['Spread over quarter hours', 'Each meter reading pro rata, each quarter hour with its price'],
           ['Determine the rule', 'Which version of § 51 EEG applies: from commissioning date, power and smart meter'],
           ['Book', 'Paid or unpaid, revenue and lost revenue. Survives restarts and meter resets'],
-          ['In HA', '“Remuneration active”, calendar “Negative prices”, extension under § 51a, report'],
+          ['In HA', '“Remuneration active”, calendar “Negative prices”, extension under § 51a, own card, report'],
           ['What for', 'Charge the battery, start the wallbox or curtail when there is no remuneration']
         ],
         hood: [
