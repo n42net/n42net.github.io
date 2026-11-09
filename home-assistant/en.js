@@ -150,7 +150,7 @@
           ['What for', 'Notice when efficiency drops or the backup heater runs needlessly']
         ],
         hood: [
-          ['Templates as data', 'Which entity is which signal, and what each state value means, lives in templates. EMS-ESP and Bosch HomeCom tested, beta templates for Luxtronik, Stiebel ISG, HeishaMon, Lambda, iDM, Viessmann, Mitsubishi Ecodan, Vaillant, Waterkotte and Daikin.'],
+          ['Templates as data', 'Which entity is which signal, and what each state value means, lives in templates. Tested for EMS-ESP, Bosch HomeCom, Daikin (P1P2MQTT), Lambda and Viessmann, beta templates for Luxtronik, Stiebel ISG, HeishaMon, iDM, Mitsubishi Ecodan, Vaillant, Waterkotte and Buderus (MX300/MX400).'],
           ['Standby separated', 'Power drawn while the compressor stands still does not count towards the per-mode factor, but does towards the overall seasonal factor. Method as in the Fraunhofer ISE field test, system boundary named after SEPEMO.'],
           ['Look back from statistics', 'At setup, the current season is read from long-term statistics. Performance curve and health check compare periods with the same method.'],
           ['Analysis', 'Performance curve over outdoor temperature, heating load in W/K with heating limit, degree days, cycling per outdoor temperature.'],
