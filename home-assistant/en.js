@@ -168,7 +168,7 @@
           ['Clean meters', 'Drops, resets and outliers removed'],
           ['Classify days', 'Operating days and idle days kept apart'],
           ['Calculate', 'Efficiency with state-of-charge correction, full cycles, idle loss, capacity'],
-          ['In HA', 'Values per month, year and total, health check, report'],
+          ['In HA', 'Values per month, year and total, health check, own card, report'],
           ['What for', 'Notice when the battery loses capacity or efficiency']
         ],
         hood: [
