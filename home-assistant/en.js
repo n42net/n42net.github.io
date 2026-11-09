@@ -125,13 +125,13 @@
           ['Record consumption per quarter hour', 'If the meter drops out, the gap is booked later'],
           ['Run every tariff', 'Fixed price, dynamic, Modul 3, standing charges, price changes from a date'],
           ['Compare', 'Difference to the current tariff and cheapest tariff so far'],
-          ['In HA', 'Cost and average price per tariff, report also for the time before setup'],
+          ['In HA', 'Cost per tariff, savings from PV and battery with payback, own card, report also for the time before setup'],
           ['What for', 'Decide whether switching tariffs pays off']
         ],
         hood: [
           ['History, not sums', 'Consumption and every price seen are kept per quarter hour, 96 values a day. All tariffs are recalculated at startup, so a new tariff also applies retroactively.'],
           ['Tariffs as config subentries', 'Each tariff is a subentry. A change reloads the entry and recalculates the history.'],
-          ['Modul 3 under § 14a EnWG', 'Time-variable grid fees with low and high rate per quarter, layered on top of an exchange-price tariff.'],
+          ['Modul 3 under § 14a EnWG', 'Time-variable grid fees with low and high rate per quarter, layered on top of an exchange-price or fixed-price tariff.'],
           ['Look back', 'Consumption from the hourly long-term statistics, exchange prices from SMARD.de, only on explicit action.'],
           ['Core from Einspeisewacht', 'Time grid, prices and meters come from its booking core, copied and independent since.']
         ],
