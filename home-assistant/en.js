@@ -105,7 +105,7 @@
           ['Determine the rule', 'Which version of § 51 EEG applies: from commissioning date, power and smart meter'],
           ['Book', 'Paid or unpaid, revenue and lost revenue. Survives restarts and meter resets'],
           ['In HA', '“Remuneration active”, calendar “Negative prices”, extension under § 51a, own card, report'],
-          ['What for', 'Charge the battery, start the wallbox or curtail when there is no remuneration']
+          ['What for', 'Charge the battery, start the wallbox or curtail when there is no remuneration. Plus a message to your phone the day before (blueprint)']
         ],
         hood: [
           ['Booking core', 'Quarter-hour meter delta times that quarter hour’s price, without HA imports. “Negative” means below 0; exactly 0 is paid.'],
@@ -123,7 +123,7 @@
         flow: [
           ['Meter and prices', 'Grid consumption meter and price sensors. SMARD.de for looking back'],
           ['Record consumption per quarter hour', 'If the meter drops out, the gap is booked later'],
-          ['Run every tariff', 'Fixed price, dynamic, Modul 3, standing charges, price changes from a date'],
+          ['Run every tariff', 'Fixed price, dynamic, Modul 3, standing charges, credit per year (e.g. Modul 1), price changes from a date'],
           ['Compare', 'Difference to the current tariff and cheapest tariff so far'],
           ['In HA', 'Cost per tariff, savings from PV and battery with payback, own card, report also for the time before setup'],
           ['What for', 'Decide whether switching tariffs pays off']
@@ -153,8 +153,8 @@
           ['Templates as data', 'Which entity is which signal, and what each state value means, lives in templates. Tested for EMS-ESP, Bosch HomeCom, Daikin (P1P2MQTT), Lambda and Viessmann, beta templates for Luxtronik, Stiebel ISG, HeishaMon, iDM, Mitsubishi Ecodan, Vaillant, Waterkotte and Buderus (MX300/MX400).'],
           ['Standby separated', 'Power drawn while the compressor stands still does not count towards the per-mode factor, but does towards the overall seasonal factor. Method as in the Fraunhofer ISE field test, system boundary named after SEPEMO.'],
           ['Look back from statistics', 'At setup, the current season is read from long-term statistics. Performance curve and health check compare periods with the same method.'],
-          ['Analysis', 'Performance curve over outdoor temperature, heating load in W/K with heating limit, degree days, run time and cycling per outdoor temperature (“runs continuously below”, “short runs from”).'],
-          ['Carnot efficiency', 'Performance factor divided by the best possible one (Carnot) at the same temperatures. Takes weather and heating curve out and compares the winter with the Fraunhofer ISE field test (air/water 0.32 to 0.44). Also backwards from long-term statistics. Built on it: what a heating curve 1, 2 or 3 K lower would have saved in electricity and euros.'],
+          ['Analysis', 'Performance curve over outdoor temperature, heating load in W/K with heating limit, degree days, run time and cycling per outdoor temperature (“runs continuously below”, “short runs from”), plus starts per year: counted over 12 months or projected with the heating days.'],
+          ['Carnot efficiency', 'Performance factor divided by the best possible one (Carnot) at the same temperatures. Takes weather and heating curve out and compares the winter with the Fraunhofer ISE field test (air/water 0.32 to 0.44). Also backwards from long-term statistics. Built on it: what a heating curve 1, 2 or 3 K lower would have saved in electricity and euros, and what hot water 2 K colder would save.'],
           ['Gas mode', 'Separate entry type for gas boilers before switching: heating load from gas consumption.']
         ],
         not: '<b>Reads only, never controls.</b> A guide, not a professional diagnosis. The values are only as good as the heat pump’s meters.',
@@ -168,7 +168,7 @@
           ['Clean meters', 'Drops, resets and outliers removed'],
           ['Classify days', 'Operating days and idle days kept apart'],
           ['Calculate', 'Efficiency with state-of-charge correction, full cycles, idle loss, capacity'],
-          ['In HA', 'Values per month, year and total, health check, own card, report'],
+          ['In HA', 'Values per month, year and total, health check, own card, report, blueprint “Report a finding”'],
           ['What for', 'Notice when the battery loses capacity or efficiency']
         ],
         hood: [

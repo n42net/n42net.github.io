@@ -727,7 +727,7 @@ footer .mono { font-size: 0.76rem; color: var(--dim); }
         ['Regel bestimmen', 'Welche Fassung von § 51 EEG gilt: aus Inbetriebnahme, Leistung und Smart Meter'],
         ['Buchen', 'Vergütet oder unvergütet, Erlös und entgangener Erlös. Übersteht Neustarts und Zähler-Resets'],
         ['In HA', '„Vergütung aktiv“, Kalender „Negative Preise“, Nachholung nach § 51a, eigene Karte, Bericht'],
-        ['Wofür', 'Speicher laden, Wallbox starten oder abregeln, wenn es keine Vergütung gibt']
+        ['Wofür', 'Speicher laden, Wallbox starten oder abregeln, wenn es keine Vergütung gibt. Dazu am Vortag eine Nachricht aufs Handy (Blueprint)']
       ],
       hood: [
         ['Buchungskern', 'Viertelstunden-Delta des Zählers mal Preis dieser Viertelstunde, ohne HA-Importe. „Negativ“ heißt kleiner als 0, genau 0 ist vergütet.'],
@@ -745,7 +745,7 @@ footer .mono { font-size: 0.76rem; color: var(--dim); }
       flow: [
         ['Zähler und Preise', 'Bezugszähler und Preissensoren. SMARD.de für den Blick zurück'],
         ['Verbrauch je Viertelstunde merken', 'Fällt der Zähler aus, wird die Lücke nachgebucht'],
-        ['Jeden Tarif durchrechnen', 'Festpreis, dynamisch, Modul 3, Grundpreise, Preisänderungen ab einem Datum'],
+        ['Jeden Tarif durchrechnen', 'Festpreis, dynamisch, Modul 3, Grundpreise, Gutschrift pro Jahr (z. B. Modul 1), Preisänderungen ab einem Datum'],
         ['Vergleichen', 'Differenz zum aktuellen Tarif und günstigster Tarif bisher'],
         ['In HA', 'Kosten je Tarif, Ersparnis durch PV und Speicher mit Amortisation, eigene Karte, Bericht auch für die Zeit vor der Einrichtung'],
         ['Wofür', 'Entscheiden, ob sich ein Tarifwechsel lohnt']
@@ -775,8 +775,8 @@ footer .mono { font-size: 0.76rem; color: var(--dim); }
         ['Vorlagen als Daten', 'Welche Entität welches Signal ist und welcher Zustandswert was bedeutet, steht in Vorlagen. Erprobt für EMS-ESP, Bosch HomeCom, Daikin (P1P2MQTT), Lambda und Viessmann, Beta-Vorlagen für Luxtronik, Stiebel ISG, HeishaMon, iDM, Mitsubishi Ecodan, Vaillant, Waterkotte und Buderus (MX300/MX400).'],
         ['Stillstand abgetrennt', 'Strom bei stehendem Kompressor zählt nicht in die Arbeitszahl je Betriebsart, wohl aber in die Gesamt-JAZ. Vorgehen wie im Feldtest des Fraunhofer ISE, Bilanzgrenze nach SEPEMO benannt.'],
         ['Rückblick aus der Statistik', 'Beim Einrichten wird die laufende Saison aus der Langzeitstatistik gelesen. Kennlinie und Gesundheits-Check vergleichen Zeiträume mit derselben Methode.'],
-        ['Analyse', 'AZ-Kennlinie über der Außentemperatur, Heizlast in W/K mit Heizgrenze, Gradtage, Laufzeit und Takten je Außentemperatur („läuft durch unter“, „Kurzläufe ab“).'],
-        ['Gütegrad', 'Arbeitszahl geteilt durch die bestmögliche (Carnot) bei denselben Temperaturen. Nimmt Wetter und Heizkurve heraus und vergleicht den Winter mit dem Feldtest des Fraunhofer ISE (Luft/Wasser 0,32 bis 0,44). Auch rückwirkend aus der Langzeitstatistik. Darauf aufbauend: was eine um 1, 2 oder 3 K tiefere Heizkurve an Strom und Euro gespart hätte.'],
+        ['Analyse', 'AZ-Kennlinie über der Außentemperatur, Heizlast in W/K mit Heizgrenze, Gradtage, Laufzeit und Takten je Außentemperatur („läuft durch unter“, „Kurzläufe ab“), dazu Starts pro Jahr: gezählt über 12 Monate oder mit den Heiztagen hochgerechnet.'],
+        ['Gütegrad', 'Arbeitszahl geteilt durch die bestmögliche (Carnot) bei denselben Temperaturen. Nimmt Wetter und Heizkurve heraus und vergleicht den Winter mit dem Feldtest des Fraunhofer ISE (Luft/Wasser 0,32 bis 0,44). Auch rückwirkend aus der Langzeitstatistik. Darauf aufbauend: was eine um 1, 2 oder 3 K tiefere Heizkurve an Strom und Euro gespart hätte, und was ein 2 K kälteres Warmwasser sparen würde.'],
         ['Gas-Modus', 'Eigener Eintragstyp für Gasheizungen vor dem Umstieg: Heizlast aus dem Gasverbrauch.']
       ],
       not: '<b>Liest nur, steuert nie.</b> Eine Orientierung, keine Fachdiagnose. Die Werte sind so gut wie die Zähler der Wärmepumpe.',
@@ -790,7 +790,7 @@ footer .mono { font-size: 0.76rem; color: var(--dim); }
         ['Zähler bereinigen', 'Rücksprünge, Resets und Ausreißer heraus'],
         ['Tage einteilen', 'Betriebstage und Ruhetage getrennt'],
         ['Rechnen', 'Wirkungsgrad mit Ladezustand-Korrektur, Vollzyklen, Ruheverlust, Kapazität'],
-        ['In HA', 'Werte je Monat, Jahr und gesamt, Gesundheits-Check, eigene Karte, Bericht'],
+        ['In HA', 'Werte je Monat, Jahr und gesamt, Gesundheits-Check, eigene Karte, Bericht, Blueprint „Befund melden“'],
         ['Wofür', 'Merken, wenn der Speicher Kapazität oder Wirkungsgrad verliert']
       ],
       hood: [
