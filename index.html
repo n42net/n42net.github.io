@@ -185,7 +185,7 @@ footer .wrap { padding-block: 56px 32px; font-size: 0.82rem; color: var(--dim); 
   const ties = (D.contributions || []).filter(x => x.merged || x.open).length;
   if (D.wachten.length) document.getElementById('stats').innerHTML = [
     [D.wachten.length, L('Integrationen', 'integrations')],
-    [inHacs, L('in HACS', 'in HACS')],
+    [inHacs, L('im Marketplace', 'in the Marketplace')],
     [fmt(sum('test_functions')), L('Tests', 'tests')],
     [ties, L('weitere Projekte mit Beiträgen', 'other projects contributed to')]
   ].map(([b, s]) => `<span><b>${b}</b> ${s}</span>`).join('');

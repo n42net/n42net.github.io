@@ -34,7 +34,7 @@
         ['Errors', 'Never silently wrong', 'If a meter reports <code>unavailable</code> or a source fails, neither the integration nor HA is blocked. If a value is missing, the figure is <code>unknown</code>, never 0. A repair issue says why.']
       ].map(([l, h, p]) => `<div class="panel"><div class="label">${l}</div><h3>${h}</h3><p>${p}</p></div>`).join(''),
       ratioLabel: 'On record in the Git history',
-      ratioP: 'Each of these commits carries the line <code>Co-Authored-By: Claude</code>. The owner stays responsible: pushes to <code>main</code>, releases, HACS submissions, issues and comments in other projects only go out once the owner says yes.',
+      ratioP: 'Each of these commits carries the line <code>Co-Authored-By: Claude</code>. The owner stays responsible: pushes to <code>main</code>, releases, Marketplace submissions, issues and comments in other projects only go out once the owner says yes.',
       rulesLabel: 'The agent’s rules', codeAria: 'Excerpt from a CLAUDE.md', excerptDe: '· excerpt, original in German',
       loopAria: 'Workflow between human, agent and CI',
       loop: [

@@ -545,7 +545,7 @@ footer .mono { font-size: 0.76rem; color: var(--dim); }
             <span class="muted" id="ratio-text"></span>
             <div class="meter" aria-hidden="true"><i id="ratio-bar" style="width:0"></i></div>
           </div>
-          <p data-t="ratioP">Jeder dieser Commits trägt die Zeile <code>Co-Authored-By: Claude</code>. Verantwortlich bleibt der Inhaber: Push auf <code>main</code>, Releases, HACS-Anträge, Issues und Kommentare in fremden Projekten gehen nur nach seinem Ja raus.</p>
+          <p data-t="ratioP">Jeder dieser Commits trägt die Zeile <code>Co-Authored-By: Claude</code>. Verantwortlich bleibt der Inhaber: Push auf <code>main</code>, Releases, Anträge für den Marketplace, Issues und Kommentare in fremden Projekten gehen nur nach seinem Ja raus.</p>
           <div class="label" style="margin-top:4px" data-t="rulesLabel">Die Regeln des Agenten</div>
           <div class="agents" id="agents"></div>
         </div>
@@ -825,8 +825,8 @@ footer .mono { font-size: 0.76rem; color: var(--dim); }
 
   const pill = w => {
     const h = w.hacs || {};
-    if (h.state === 'default') return '<span class="pill in">HACS</span>';
-    if (h.state === 'pending') return `<span class="pill wait">${L('HACS-Antrag offen', 'HACS request open')}</span>`;
+    if (h.state === 'default') return '<span class="pill in">Marketplace</span>';
+    if (h.state === 'pending') return `<span class="pill wait">${L('Aufnahme beantragt', 'Listing requested')}</span>`;
     return `<span class="pill">${L('eigenes Repo', 'custom repository')}</span>`;
   };
 
@@ -835,7 +835,7 @@ footer .mono { font-size: 0.76rem; color: var(--dim); }
   const inHacs = DATA.wachten.filter(w => w.hacs && w.hacs.state === 'default').length;
   const lastCommit = DATA.wachten.map(w => w.last_commit).filter(Boolean).sort().pop();
   document.getElementById('status-text').textContent =
-    `${DATA.wachten.length} ${L('Integrationen', 'integrations')} · ${inHacs} in HACS · ${L('zuletzt geändert', 'last change')} ${date(lastCommit)}`;
+    `${DATA.wachten.length} ${L('Integrationen', 'integrations')} · ${inHacs} ${L('im Marketplace', 'in the Marketplace')} · ${L('zuletzt geändert', 'last change')} ${date(lastCommit)}`;
   document.getElementById('kbd-hint').textContent = /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘ K' : L('Strg K', 'Ctrl K');
 
   /* ---------- Überschrift: tippt sich durch die Familie ---------- */
@@ -915,7 +915,7 @@ footer .mono { font-size: 0.76rem; color: var(--dim); }
     [de(sum('test_functions')), L('Testfunktionen', 'test functions')],
     [de(sum('python_lines')), L('Zeilen Python', 'lines of Python')],
     [noReq ? '0' : '–', L('Fremdbibliotheken', 'third-party libraries')],
-    [`${inHacs}/${DATA.wachten.length}`, L('in der HACS-Standardliste', 'in the HACS default list')]
+    [`${inHacs}/${DATA.wachten.length}`, L('im Marketplace', 'in the Marketplace')]
   ].map(([b, s]) => `<div class="kpi"><b>${b}</b><span>${s}</span></div>`).join('');
 
   /* ---------- Kanal-Monitor ---------- */
@@ -1351,7 +1351,7 @@ footer .mono { font-size: 0.76rem; color: var(--dim); }
     ['ok', '  ✓ ', 'd', L('Ruleset: CI grün, Fast-forward, kein Merge-Commit', 'Ruleset: CI green, fast-forward, no merge commit')],
     ['p', '$ ', 'c', `gh release create v${latest.version || 'x.y.z'} --target main --latest`],
     ['ok', '  ✓ ', 'd', `release-asset: ${latest.name || 'wacht'}.zip ${L('angehängt', 'attached')}`],
-    ['ok', '  ✓ ', 'd', `HACS: ${L('erstes Release in der Liste ist', 'first release in the list is')} v${latest.version || 'x.y.z'}`],
+    ['ok', '  ✓ ', 'd', `Marketplace: ${L('erstes Release in der Liste ist', 'first release in the list is')} v${latest.version || 'x.y.z'}`],
     ['h', '  → ', 'd', L('Home Assistant zeigt das Update an', 'Home Assistant shows the update')]
   ];
   const termEl = document.getElementById('term');
@@ -1383,7 +1383,7 @@ footer .mono { font-size: 0.76rem; color: var(--dim); }
     [L('Prüfen', 'Check'), `${L('CI bei jedem Push', 'CI on every push')}: ${jobs.map(x => `<code>${x}</code>`).join(' ')}`],
     [L('Freigeben', 'Approve'), L('Ein Ruleset lässt nur grüne Stände auf <code>main</code>', 'A ruleset only lets green states onto <code>main</code>')],
     ['Release', L('Tag <code>vX.Y.Z</code>, ein Workflow hängt die ZIP an. Tags sind unveränderlich', 'Tag <code>vX.Y.Z</code>, a workflow attaches the ZIP. Tags are immutable')],
-    ['HACS', L('Liest das neueste Release und zeigt das Update an', 'Reads the latest release and shows the update')],
+    ['Marketplace', L('Liest das neueste Release und zeigt das Update an', 'Reads the latest release and shows the update')],
     ['Home Assistant', L('Herunterladen, neu starten, fertig', 'Download, restart, done')]
   ].map(([b, s], i) => `<div class="st"><i>${String(i + 1).padStart(2, '0')}</i><div><b>${b}</b><span>${s}</span></div></div>`).join('');
   const withCheck = DATA.wachten.filter(w => (w.workflows || []).includes('source-check')).map(w => C[w.name] && C[w.name].title).filter(Boolean);
@@ -1405,7 +1405,7 @@ footer .mono { font-size: 0.76rem; color: var(--dim); }
     : w.hacs && w.hacs.state === 'pending' ? `<a class="pill wait" href="${w.hacs.url}">${L('Antrag', 'request')} #${w.hacs.pr}</a>` : `<span class="pill">${L('eigenes Repo', 'custom repository')}</span>`;
   const bar = (v, max, k) => `<div class="barcell" style="--c:var(--${k})"><i style="--v:${(v / max * 100).toFixed(1)}%"></i><span class="mono">${de(v)}</span></div>`;
   document.getElementById('table').innerHTML = `
-    <thead><tr><th>Integration</th><th class="r">Version</th><th class="r">${L('vom', 'released')}</th><th class="r">Releases</th><th class="r">Commits</th><th>${L('Python-Zeilen', 'Python lines')}</th><th>${L('Testfunktionen', 'Test functions')}</th><th class="r">${L('HA ab', 'HA from')}</th><th>HACS</th></tr></thead>
+    <thead><tr><th>Integration</th><th class="r">Version</th><th class="r">${L('vom', 'released')}</th><th class="r">Releases</th><th class="r">Commits</th><th>${L('Python-Zeilen', 'Python lines')}</th><th>${L('Testfunktionen', 'Test functions')}</th><th class="r">${L('HA ab', 'HA from')}</th><th>Marketplace</th></tr></thead>
     <tbody>${CONTENT.map((c, i) => { const w = W(c.name); return (i === 0 || newGroup(i) ? `<tr class="grp-row"><td colspan="9">${groupOf(c.name).title}</td></tr>` : '') + `<tr>
       <td><a class="tn-name" href="${w.url}">${icon(c.name, 22)}${c.title}</a></td>
       <td class="r">${w.version || '–'}</td><td class="r">${date(w.released)}</td><td class="r">${w.releases ?? '–'}</td><td class="r">${de(w.commits || 0)}</td>
